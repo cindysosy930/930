@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>水循環互動模擬｜中學科學</title>
+<style>
+  :root {
+    --sky-top: #87CEEB;
+    --sky-mid: #B0E0F6;
+    --sky-bot: #E8F4FC;
+    --ocean: #1a6bb5;
+    --ocean-deep: #0d4a82;
+    --land: #5a8f3c;
+    --land-dark: #3d6b28;
+    --sun: #FDB813;
+    --sun-glow: #FFE066;
+    --cloud: #f5f8fc;
+    --cloud-shadow: #c5d0e0;
+    --rain: #4a9ede;
+    --panel: #ffffff;
+    --text: #1a2a3a;
+    --muted: #5a6a7a;
+    --accent: #2563eb;
+    --accent-hover: #1d4ed8;
+    --step-idle: #e8eef5;
+    --step-active: #2563eb;
+    --step-done: #93c5fd;
+    --border: #d0dbe8;
+    --shadow: 0 4px 20px rgba(30,60,90,.12);
+    --radius: 12px;
+    --font: "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", "Helvetica Neue", sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font);
+    background: linear-gradient(160deg, #eef4fb 0%, #dce8f5 100%);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  .app {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 16px 16px 32px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 12px;
+  }
+
+  header h1 {
+    font-size: clamp(1.35rem, 3vw, 1.75rem);
+    font-weight: 700;
+    color: #0f2744;
+    letter-spacing: 0.02em;
+  }
+
+  header .subtitle {
+    font-size: 0.9rem;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .tip {
+    background: #fff8e6;
+    border: 1px solid #f0d78c;
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    font-size: 0.88rem;
+    color: #6b5300;
+    margin-bottom: 14px;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .tip strong { color: #8a6a00; white-space: nowrap; }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 14px;
+    align-items: start;
+  }
+
+  @media (max-width: 760px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  /* —— 步驟側欄 —— */
+  .steps-panel {
+    background: var(--panel);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 14px;
+    border: 1px solid var(--border);
+  }
+
+  .steps-panel h2 {
+    font-size: 0.85rem;
+    text-transform: none;
+    color: var(--muted);
+    margin-bottom: 10px;
+    letter-spacing: 0.04em;
+  }
+
+  .step-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  @media (max-width: 760px) {
+    .step-list {
+      flex-direction: row;
+      flex-wrap: wrap;
+    }
+    .step-list li { flex: 1 1 45%; }
+  }
+
+  .step-btn {
+    width: 100%;
+    text-align: left;
+    border: 2px solid transparent;
+    background: var(--step-idle);
+    border-radius: 10px;
+    padding: 10px 12px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.95rem;
+    color: var(--text);
+    transition: background .2s, border-color .2s, transform .15s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .step-btn:hover { background: #dce6f2; }
+  .step-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .step-btn .num {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: #b8c8dc;
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.85rem;
+    flex-shrink: 0;
+  }
+
+  .step-btn.active {
+    background: #eff4ff;
+    border-color: var(--step-active);
+  }
+  .step-btn.active .num { background: var(--step-active); }
+  .step-btn.done .num { background: var(--step-done); color: #1e3a5f; }
+  .step-btn.done:not(.active) { opacity: 0.85; }
+
+  /* —— 主畫面 —— */
+  .main {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .stage-wrap {
+    background: var(--panel);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  .stage {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    min-height: 280px;
+    max-height: 480px;
+    overflow: hidden;
+    background: linear-gradient(180deg,
+      var(--sky-top) 0%,
+      var(--sky-mid) 45%,
+      var(--sky-bot) 70%,
+      #c8e0f0 70%);
+  }
+
+  /* 太陽 */
+  .sun {
+    position: absolute;
+    top: 8%;
+    left: 8%;
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, var(--sun-glow), var(--sun) 60%, #e89700);
+    box-shadow: 0 0 30px 12px rgba(253,184,19,.45);
+    transition: opacity .5s, transform .5s;
+    z-index: 2;
+  }
+  .sun.dim { opacity: 0.35; transform: scale(0.9); }
+  .sun.hot {
+    animation: sunPulse 1.8s ease-in-out infinite;
+  }
+  @keyframes sunPulse {
+    0%, 100% { box-shadow: 0 0 30px 12px rgba(253,184,19,.45); }
+    50% { box-shadow: 0 0 45px 20px rgba(253,184,19,.7); }
+  }
+
+  /* 陸地 */
+  .land {
+    position: absolute;
+    bottom: 18%;
+    right: 0;
+    width: 42%;
+    height: 28%;
+    background: linear-gradient(180deg, var(--land) 0%, var(--land-dark) 100%);
+    border-radius: 40% 60% 0 0 / 60% 40% 0 0;
+    z-index: 3;
+  }
+  .land::before {
+    content: "";
+    position: absolute;
+    top: -18px; left: 18%;
+    width: 28px; height: 36px;
+    background: #2d5a1e;
+    border-radius: 40% 40% 10% 10%;
+    box-shadow: 22px 4px 0 -4px #3a7028, 40px 8px 0 -8px #2d5a1e;
+  }
+
+  /* 海洋 */
+  .ocean {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 22%;
+    background: linear-gradient(180deg, var(--ocean) 0%, var(--ocean-deep) 100%);
+    z-index: 4;
+    overflow: hidden;
+  }
+  .wave {
+    position: absolute;
+    top: -8px; left: -10%;
+    width: 120%; height: 16px;
+    background: repeating-linear-gradient(90deg,
+      transparent 0, transparent 20px,
+      rgba(255,255,255,.15) 20px, rgba(255,255,255,.15) 40px);
+    animation: waveMove 4s linear infinite;
+  }
+  @keyframes waveMove {
+    from { transform: translateX(0); }
+    to { transform: translateX(40px); }
+  }
+
+  /* 蒸發氣泡／水氣 */
+  .vapor-layer {
+    position: absolute;
+    bottom: 20%; left: 5%;
+    width: 45%; height: 40%;
+    pointer-events: none;
+    z-index: 5;
+    opacity: 0;
+    transition: opacity .4s;
+  }
+  .vapor-layer.show { opacity: 1; }
+
+  .vapor {
+    position: absolute;
+    bottom: 0;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.55);
+    animation: floatUp 2.2s ease-out infinite;
+  }
+  .vapor:nth-child(1) { left: 10%; animation-delay: 0s; }
+  .vapor:nth-child(2) { left: 25%; animation-delay: .35s; width: 8px; height: 8px; }
+  .vapor:nth-child(3) { left: 40%; animation-delay: .7s; }
+  .vapor:nth-child(4) { left: 55%; animation-delay: .2s; width: 12px; height: 12px; }
+  .vapor:nth-child(5) { left: 70%; animation-delay: .9s; }
+  .vapor:nth-child(6) { left: 85%; animation-delay: .5s; width: 7px; height: 7px; }
+  .vapor:nth-child(7) { left: 18%; animation-delay: 1.1s; }
+  .vapor:nth-child(8) { left: 48%; animation-delay: 1.4s; width: 9px; height: 9px; }
+
+  @keyframes floatUp {
+    0% { transform: translateY(0) scale(1); opacity: 0.8; }
+    70% { opacity: 0.5; }
+    100% { transform: translateY(-120px) scale(1.6); opacity: 0; }
+  }
+
+  /* 雲 */
+  .clouds {
+    position: absolute;
+    top: 12%;
+    left: 22%;
+    width: 48%;
+    height: 28%;
+    z-index: 6;
+    opacity: 0;
+    transform: scale(0.6) translateY(20px);
+    transition: opacity .6s, transform .8s ease-in-out, left .8s ease-in-out;
+  }
+  .clouds.show {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  /* 運輸：雲由中間向右漂移 */
+  .clouds.moving {
+    left: 22%;
+    animation: cloudDriftRight 2.8s ease-in-out infinite alternate;
+  }
+  @keyframes cloudDriftRight {
+    from { transform: translateX(0) scale(1); }
+    to { transform: translateX(28%) scale(1); }
+  }
+  /* 降水：雲固定在右側（陸地／山上方） */
+  .clouds.on-right {
+    left: 48%;
+    transform: scale(1) translateY(0);
+    animation: none;
+  }
+
+  .cloud {
+    position: absolute;
+    background: var(--cloud);
+    border-radius: 50px;
+    box-shadow: 8px 8px 0 -2px var(--cloud-shadow);
+  }
+  .cloud.c1 { width: 90px; height: 36px; top: 20%; left: 10%; }
+  .cloud.c1::before, .cloud.c1::after {
+    content: ""; position: absolute; background: var(--cloud); border-radius: 50%;
+  }
+  .cloud.c1::before { width: 40px; height: 40px; top: -20px; left: 14px; }
+  .cloud.c1::after { width: 50px; height: 50px; top: -26px; left: 36px; }
+
+  .cloud.c2 { width: 110px; height: 40px; top: 35%; left: 45%; }
+  .cloud.c2::before, .cloud.c2::after {
+    content: ""; position: absolute; background: var(--cloud); border-radius: 50%;
+  }
+  .cloud.c2::before { width: 48px; height: 48px; top: -24px; left: 16px; }
+  .cloud.c2::after { width: 56px; height: 56px; top: -30px; left: 42px; }
+
+  .cloud.c3 { width: 70px; height: 30px; top: 8%; left: 55%; opacity: 0.9; }
+  .cloud.c3::before {
+    content: ""; position: absolute; background: var(--cloud); border-radius: 50%;
+    width: 36px; height: 36px; top: -16px; left: 18px;
+  }
+
+  /* 風箭頭（運輸） */
+  .wind-arrows {
+    position: absolute;
+    top: 22%;
+    left: 18%;
+    width: 60%;
+    height: 20%;
+    z-index: 7;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .4s;
+  }
+  .wind-arrows.show { opacity: 1; }
+
+  .arrow {
+    position: absolute;
+    height: 3px;
+    background: rgba(255,255,255,.85);
+    border-radius: 2px;
+    animation: arrowFly 1.6s ease-in-out infinite;
+  }
+  .arrow::after {
+    content: "";
+    position: absolute;
+    right: -2px; top: -5px;
+    border: 6px solid transparent;
+    border-left-color: rgba(255,255,255,.85);
+  }
+  .arrow.a1 { width: 50px; top: 20%; left: 0; animation-delay: 0s; }
+  .arrow.a2 { width: 40px; top: 55%; left: 15%; animation-delay: .4s; }
+  .arrow.a3 { width: 55px; top: 35%; left: 35%; animation-delay: .2s; }
+
+  @keyframes arrowFly {
+    0% { transform: translateX(0); opacity: 0; }
+    20% { opacity: 1; }
+    80% { opacity: 1; }
+    100% { transform: translateX(70px); opacity: 0; }
+  }
+
+  /* 雨（落自右側雲下、陸地一帶） */
+  .rain-layer {
+    position: absolute;
+    top: 38%;
+    left: 52%;
+    width: 42%;
+    height: 42%;
+    z-index: 8;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .4s;
+    overflow: hidden;
+  }
+  .rain-layer.show { opacity: 1; }
+
+  .drop {
+    position: absolute;
+    top: -10%;
+    width: 3px; height: 12px;
+    background: linear-gradient(180deg, transparent, var(--rain));
+    border-radius: 0 0 50% 50%;
+    animation: rainFall 0.9s linear infinite;
+  }
+  .drop:nth-child(1) { left: 8%; animation-delay: 0s; }
+  .drop:nth-child(2) { left: 18%; animation-delay: .15s; height: 10px; }
+  .drop:nth-child(3) { left: 28%; animation-delay: .35s; }
+  .drop:nth-child(4) { left: 38%; animation-delay: .05s; height: 14px; }
+  .drop:nth-child(5) { left: 48%; animation-delay: .45s; }
+  .drop:nth-child(6) { left: 58%; animation-delay: .25s; height: 11px; }
+  .drop:nth-child(7) { left: 68%; animation-delay: .55s; }
+  .drop:nth-child(8) { left: 78%; animation-delay: .1s; height: 13px; }
+  .drop:nth-child(9) { left: 88%; animation-delay: .3s; }
+  .drop:nth-child(10) { left: 22%; animation-delay: .65s; }
+  .drop:nth-child(11) { left: 52%; animation-delay: .4s; height: 9px; }
+  .drop:nth-child(12) { left: 72%; animation-delay: .7s; }
+
+  @keyframes rainFall {
+    0% { transform: translateY(0); opacity: 0.9; }
+    100% { transform: translateY(160px); opacity: 0.2; }
+  }
+
+  /* 步驟標籤浮於畫面 */
+  .stage-label {
+    position: absolute;
+    top: 10px; right: 12px;
+    background: rgba(15,39,68,.78);
+    color: #fff;
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 20px;
+    z-index: 20;
+    letter-spacing: 0.03em;
+  }
+
+  /* 說明卡 */
+  .explain {
+    background: var(--panel);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    padding: 14px 16px;
+  }
+  .explain h3 {
+    font-size: 1.05rem;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  .explain p {
+    font-size: 0.95rem;
+    color: var(--text);
+  }
+
+  /* 控制列 */
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+    background: var(--panel);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    padding: 12px;
+  }
+
+  .btn {
+    font-family: inherit;
+    font-size: 0.92rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 18px;
+    cursor: pointer;
+    transition: background .2s, transform .1s, opacity .2s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .btn-nav {
+    background: #e8eef5;
+    color: var(--text);
+  }
+  .btn-nav:hover:not(:disabled) { background: #d4deeb; }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+  }
+  .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+
+  .btn-play {
+    background: #059669;
+    color: #fff;
+    min-width: 120px;
+  }
+  .btn-play:hover:not(:disabled) { background: #047857; }
+  .btn-play.playing {
+    background: #d97706;
+  }
+  .btn-play.playing:hover { background: #b45309; }
+
+  .progress-dots {
+    display: flex;
+    gap: 6px;
+    margin: 0 8px;
+  }
+  .dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: #c5d0e0;
+    transition: background .25s, transform .25s;
+  }
+  .dot.on { background: var(--accent); transform: scale(1.2); }
+  .dot.past { background: var(--step-done); }
+
+  footer {
+    text-align: center;
+    margin-top: 16px;
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>💧 水循環互動模擬</h1>
+    <p class="subtitle">中學科學｜認識地球上的水如何不斷循環</p>
+  </header>
+
+  <div class="tip">
+    <strong>課堂用法：</strong>
+    <span>先叫學生預測「下一步會發生甚麼」，再按「下一步」或自動播放核對。亦可點選左側步驟直接跳轉討論。</span>
+  </div>
+
+  <div class="layout">
+    <aside class="steps-panel">
+      <h2>四個步驟</h2>
+      <ol class="step-list" id="stepList" role="listbox" aria-label="水循環步驟">
+        <li><button type="button" class="step-btn active" data-step="0" role="option" aria-selected="true">
+          <span class="num">1</span><span>蒸發</span>
+        </button></li>
+        <li><button type="button" class="step-btn" data-step="1" role="option" aria-selected="false">
+          <span class="num">2</span><span>凝結</span>
+        </button></li>
+        <li><button type="button" class="step-btn" data-step="2" role="option" aria-selected="false">
+          <span class="num">3</span><span>運輸</span>
+        </button></li>
+        <li><button type="button" class="step-btn" data-step="3" role="option" aria-selected="false">
+          <span class="num">4</span><span>降水</span>
+        </button></li>
+      </ol>
+    </aside>
+
+    <div class="main">
+      <div class="stage-wrap">
+        <div class="stage" id="stage" aria-live="polite">
+          <div class="stage-label" id="stageLabel">1. 蒸發</div>
+          <div class="sun hot" id="sun" aria-hidden="true"></div>
+          <div class="land" aria-hidden="true"></div>
+          <div class="ocean" aria-hidden="true"><div class="wave"></div></div>
+
+          <div class="vapor-layer show" id="vapor" aria-hidden="true">
+            <span class="vapor"></span><span class="vapor"></span>
+            <span class="vapor"></span><span class="vapor"></span>
+            <span class="vapor"></span><span class="vapor"></span>
+            <span class="vapor"></span><span class="vapor"></span>
+          </div>
+
+          <div class="clouds" id="clouds" aria-hidden="true">
+            <div class="cloud c1"></div>
+            <div class="cloud c2"></div>
+            <div class="cloud c3"></div>
+          </div>
+
+          <div class="wind-arrows" id="wind" aria-hidden="true">
+            <div class="arrow a1"></div>
+            <div class="arrow a2"></div>
+            <div class="arrow a3"></div>
+          </div>
+
+          <div class="rain-layer" id="rain" aria-hidden="true">
+            <span class="drop"></span><span class="drop"></span>
+            <span class="drop"></span><span class="drop"></span>
+            <span class="drop"></span><span class="drop"></span>
+            <span class="drop"></span><span class="drop"></span>
+            <span class="drop"></span><span class="drop"></span>
+            <span class="drop"></span><span class="drop"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="explain" id="explain">
+        <h3 id="explainTitle">1. 蒸發</h3>
+        <p id="explainText">太陽加熱海洋及水面，液態水變成水蒸氣（氣體）並上升進入大氣。這過程需要吸收熱能。</p>
+      </div>
+
+      <div class="controls">
+        <button type="button" class="btn btn-nav" id="btnPrev" disabled>← 上一步</button>
+        <div class="progress-dots" id="dots" aria-hidden="true">
+          <span class="dot on"></span><span class="dot"></span>
+          <span class="dot"></span><span class="dot"></span>
+        </div>
+        <button type="button" class="btn btn-nav" id="btnNext">下一步 →</button>
+        <button type="button" class="btn btn-play" id="btnAuto" aria-pressed="false">▶ 自動播放</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>水循環互動模擬 · 適合香港中學科學課堂 · 離線可用</footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var STEPS = [
+    {
+      name: "蒸發",
+      title: "1. 蒸發",
+      text: "太陽加熱海洋及水面，液態水變成水蒸氣（氣體）並上升進入大氣。這過程需要吸收熱能。"
+    },
+    {
+      name: "凝結",
+      title: "2. 凝結",
+      text: "水蒸氣上升後遇冷，冷卻變成微小液態水滴（或冰晶），聚集形成雲。凝結時會放出熱能。"
+    },
+    {
+      name: "運輸",
+      title: "3. 運輸",
+      text: "風帶動雲和水氣橫向移動，把水分從海洋上空運送到陸地或其他地區，令水循環覆蓋更大範圍。"
+    },
+    {
+      name: "降水",
+      title: "4. 降水",
+      text: "雲中水滴或冰晶變得夠大、夠重時，就會以雨、雪等形式落回地面，把水分帶回地表。"
+    }
+  ];
+
+  var AUTO_MS = 2600;
+  var current = 0;
+  var autoTimer = null;
+  var playing = false;
+
+  var el = {
+    list: document.getElementById("stepList"),
+    label: document.getElementById("stageLabel"),
+    title: document.getElementById("explainTitle"),
+    text: document.getElementById("explainText"),
+    sun: document.getElementById("sun"),
+    vapor: document.getElementById("vapor"),
+    clouds: document.getElementById("clouds"),
+    wind: document.getElementById("wind"),
+    rain: document.getElementById("rain"),
+    prev: document.getElementById("btnPrev"),
+    next: document.getElementById("btnNext"),
+    auto: document.getElementById("btnAuto"),
+    dots: document.getElementById("dots")
+  };
+
+  function setStep(n, fromAuto) {
+    if (n < 0 || n >= STEPS.length) return;
+    current = n;
+    var s = STEPS[n];
+
+    el.label.textContent = s.title;
+    el.title.textContent = s.title;
+    el.text.textContent = s.text;
+
+    // 側欄按鈕
+    var btns = el.list.querySelectorAll(".step-btn");
+    for (var i = 0; i < btns.length; i++) {
+      var b = btns[i];
+      var idx = parseInt(b.getAttribute("data-step"), 10);
+      b.classList.toggle("active", idx === n);
+      b.classList.toggle("done", idx < n);
+      b.setAttribute("aria-selected", idx === n ? "true" : "false");
+    }
+
+    // 進度點
+    var dots = el.dots.querySelectorAll(".dot");
+    for (var d = 0; d < dots.length; d++) {
+      dots[d].classList.toggle("on", d === n);
+      dots[d].classList.toggle("past", d < n);
+    }
+
+    // 視覺狀態
+    el.sun.classList.remove("hot", "dim");
+    el.vapor.classList.remove("show");
+    el.clouds.classList.remove("show", "moving", "on-right");
+    el.wind.classList.remove("show");
+    el.rain.classList.remove("show");
+
+    if (n === 0) {
+      // 蒸發：太陽強、水氣上升
+      el.sun.classList.add("hot");
+      el.vapor.classList.add("show");
+    } else if (n === 1) {
+      // 凝結：水氣 + 雲形成（偏中央／海洋上空）
+      el.sun.classList.add("dim");
+      el.vapor.classList.add("show");
+      el.clouds.classList.add("show");
+    } else if (n === 2) {
+      // 運輸：雲向右漂移 + 風箭頭
+      el.sun.classList.add("dim");
+      el.clouds.classList.add("show", "moving");
+      el.wind.classList.add("show");
+    } else if (n === 3) {
+      // 降水：雲停在右側陸地上方，雨由右邊落下
+      el.sun.classList.add("dim");
+      el.clouds.classList.add("show", "on-right");
+      el.rain.classList.add("show");
+    }
+
+    el.prev.disabled = n === 0;
+    el.next.disabled = n === STEPS.length - 1;
+
+    if (!fromAuto && playing) {
+      // 手動跳轉時重設計時，保持自動播放節奏
+      scheduleNext();
+    }
+  }
+
+  function stopAuto() {
+    playing = false;
+    if (autoTimer) {
+      clearTimeout(autoTimer);
+      autoTimer = null;
+    }
+    el.auto.classList.remove("playing");
+    el.auto.setAttribute("aria-pressed", "false");
+    el.auto.textContent = "▶ 自動播放";
+  }
+
+  function scheduleNext() {
+    if (autoTimer) clearTimeout(autoTimer);
+    autoTimer = setTimeout(function () {
+      if (!playing) return;
+      if (current < STEPS.length - 1) {
+        setStep(current + 1, true);
+        scheduleNext();
+      } else {
+        // 播完最後一步後停止
+        stopAuto();
+      }
+    }, AUTO_MS);
+  }
+
+  function startAuto() {
+    playing = true;
+    el.auto.classList.add("playing");
+    el.auto.setAttribute("aria-pressed", "true");
+    el.auto.textContent = "⏸ 暫停";
+    // 若已在最後一步，從頭再播
+    if (current >= STEPS.length - 1) {
+      setStep(0, true);
+    }
+    scheduleNext();
+  }
+
+  function toggleAuto() {
+    if (playing) stopAuto();
+    else startAuto();
+  }
+
+  el.prev.addEventListener("click", function () {
+    if (current > 0) setStep(current - 1, false);
+  });
+  el.next.addEventListener("click", function () {
+    if (current < STEPS.length - 1) setStep(current + 1, false);
+  });
+  el.auto.addEventListener("click", toggleAuto);
+
+  el.list.addEventListener("click", function (e) {
+    var btn = e.target.closest(".step-btn");
+    if (!btn) return;
+    var n = parseInt(btn.getAttribute("data-step"), 10);
+    if (!isNaN(n)) setStep(n, false);
+  });
+
+  // 鍵盤：左右箭頭
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+      e.preventDefault();
+      if (current < STEPS.length - 1) setStep(current + 1, false);
+    } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+      e.preventDefault();
+      if (current > 0) setStep(current - 1, false);
+    } else if (e.key === " " && e.target === document.body) {
+      e.preventDefault();
+      toggleAuto();
+    }
+  });
+
+  setStep(0, true);
+})();
+</script>
+</body>
+</html>
