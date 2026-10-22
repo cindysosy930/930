@@ -147,7 +147,7 @@
   <p class="sub">手機可開 · 每次 10–15 題 · 答完顯示拼音 · 結束可複製明細貼畀韓仔</p>
 
   <div class="card info" id="note">
-    每次 10–15 題。每次 10–15 題。剛練學校 12／16：방학／공부／숙제／질문 要加強；動詞讀寫同 어제／오늘 繼續溫。預設「錯題加強」。
+    每次 10–15 題。每次 10–15 題。新增「食物」包（泡菜、拌飯、好味等）。學校 9／10 好穩；수업 可再溫。預設「食物」。
   </div>
 
   <div class="card">
@@ -261,6 +261,33 @@ const MIX = [
   { kr:"일어나다", zh:"起身", rom:"ireonada" },
   { kr:"공부하다", zh:"溫習", rom:"gongbuhada" },
 ];
+
+const FOOD = [
+  { kr:"물", zh:"水", rom:"mul" },
+  { kr:"밥", zh:"飯", rom:"bap" },
+  { kr:"김치", zh:"泡菜", rom:"gimchi" },
+  { kr:"고기", zh:"肉", rom:"gogi" },
+  { kr:"생선", zh:"魚", rom:"saengseon" },
+  { kr:"계란", zh:"蛋", rom:"gyeran" },
+  { kr:"우유", zh:"牛奶", rom:"uyu" },
+  { kr:"커피", zh:"咖啡", rom:"keopi" },
+  { kr:"차", zh:"茶", rom:"cha" },
+  { kr:"빵", zh:"麵包", rom:"ppang" },
+  { kr:"과일", zh:"生果", rom:"gwail" },
+  { kr:"사과", zh:"蘋果", rom:"sagwa" },
+  { kr:"바나나", zh:"香蕉", rom:"banana" },
+  { kr:"야채", zh:"蔬菜", rom:"yachae" },
+  { kr:"라면", zh:"即食麵", rom:"ramyeon" },
+  { kr:"국", zh:"湯", rom:"guk" },
+  { kr:"김치찌개", zh:"泡菜湯", rom:"gimchijjigae" },
+  { kr:"비빔밥", zh:"拌飯", rom:"bibimbap" },
+  { kr:"치킨", zh:"炸雞", rom:"chikin" },
+  { kr:"아이스크림", zh:"雪糕", rom:"aiseukeurim" },
+  { kr:"먹다", zh:"吃", rom:"meokda" },
+  { kr:"마시다", zh:"喝", rom:"masida" },
+  { kr:"맛있다", zh:"好味", rom:"masitda" },
+  { kr:"배고프다", zh:"肚餓", rom:"baegopeuda" },
+];
 const WEAK = [
   { kr:"숙제", zh:"功課", rom:"sukje" },
   { kr:"공부", zh:"溫習／學習", rom:"gongbu" },
@@ -285,6 +312,7 @@ const CONTRAST = [
 const REVIEW = WEAK.concat(WEAK, WEAK, CONTRAST);
 
 const PACKS = {
+  food: { label: "食物", cards: FOOD },
   review: { label: "錯題加強", cards: REVIEW },
   mix: { label: "進階混合", cards: MIX },
   school: { label: "學校生活", cards: SCHOOL },
@@ -292,7 +320,7 @@ const PACKS = {
   basic: { label: "常用字", cards: BASIC },
 };
 
-let pack = "review";
+let pack = "food";
 let mode = "kr2zh";
 let deck = [];
 let index = 0;
@@ -459,6 +487,7 @@ document.getElementById("copyBtn").onclick = async () => {
 };
 
 const PACK_OPTS = [
+  { value: "food", label: "食物" },
   { value: "review", label: "錯題" },
   { value: "mix", label: "進階" },
   { value: "school", label: "學校" },
