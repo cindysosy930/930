@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>韓文初階練習</title>
+<style>
+  :root {
+    --bg: #f6f4ef;
+    --card: #fff;
+    --text: #1a1a1a;
+    --muted: #666;
+    --border: #e5e1d8;
+    --primary: #1f4b99;
+    --primary-text: #fff;
+    --ok: #1a7f4b;
+    --bad: #b42318;
+    --info: #e8f0fe;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", "PingFang TC", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.45;
+    padding: 16px;
+    padding-bottom: 40px;
+  }
+  h1 { font-size: 1.35rem; margin: 0 0 6px; }
+  .sub { color: var(--muted); font-size: 0.92rem; margin-bottom: 16px; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+  .label { font-size: 0.8rem; color: var(--muted); margin-bottom: 8px; }
+  .seg {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .seg button {
+    border: 1px solid var(--border);
+    background: #fafafa;
+    border-radius: 999px;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+  .seg button.active {
+    background: var(--primary);
+    color: var(--primary-text);
+    border-color: var(--primary);
+  }
+  .prompt {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin: 8px 0 4px;
+    word-break: break-word;
+  }
+  .feedback { color: var(--muted); font-size: 0.95rem; margin-bottom: 10px; white-space: pre-wrap; }
+  .feedback.ok { color: var(--ok); }
+  .feedback.bad { color: var(--bad); }
+  .choices { display: grid; gap: 8px; }
+  .choices button {
+    width: 100%;
+    text-align: left;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: #fff;
+    font-size: 1.05rem;
+    cursor: pointer;
+  }
+  .choices button:disabled { opacity: 0.85; cursor: default; }
+  .choices button.correct {
+    border-color: var(--ok);
+    background: #eaf7ef;
+  }
+  .choices button.wrong {
+    border-color: var(--bad);
+    background: #fdeceb;
+  }
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 10px;
+  }
+  .btn {
+    border: none;
+    border-radius: 999px;
+    padding: 10px 16px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    background: var(--primary);
+    color: var(--primary-text);
+  }
+  .btn.secondary {
+    background: #eee;
+    color: var(--text);
+  }
+  .info {
+    background: var(--info);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 0.9rem;
+  }
+  pre.report {
+    white-space: pre-wrap;
+    word-break: break-word;
+    background: #fafafa;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 0.85rem;
+    margin: 8px 0 0;
+  }
+  .meta { color: var(--muted); font-size: 0.85rem; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+  <h1>韓文初階練習</h1>
+  <p class="sub">手機可開 · 答完顯示拼音 · 結束可一鍵複製明細貼畀韓仔</p>
+
+  <div class="card info" id="note">
+    根據你進階混合 10／18：問句詞較穩；動詞（읽다／쓰다）同 어떻게、어제、숙제、시험 要加強。預設「錯題加強」＋睇韓揀中。
+  </div>
+
+  <div class="card">
+    <div class="label">揀練習</div>
+    <div class="seg" id="packSeg"></div>
+  </div>
+
+  <div class="card">
+    <div class="label">練習模式</div>
+    <div class="seg" id="modeSeg"></div>
+  </div>
+
+  <div class="card" id="quizCard">
+    <div class="row">
+      <div class="meta" id="progress"></div>
+      <div class="meta" id="scoreLive"></div>
+    </div>
+    <div class="label" id="qLabel"></div>
+    <div class="prompt" id="prompt"></div>
+    <div class="feedback" id="feedback">揀下面其中一個答案。</div>
+    <div class="choices" id="choices"></div>
+    <div class="row">
+      <span></span>
+      <button class="btn hidden" id="nextBtn" type="button">下一題</button>
+    </div>
+  </div>
+
+  <div class="card hidden" id="resultCard">
+    <div class="row">
+      <strong id="resultTitle">完成！</strong>
+      <button class="btn" id="copyBtn" type="button">複製明細</button>
+    </div>
+    <p class="meta" id="copyMsg">撳「複製明細」，再貼去同韓仔聊天。</p>
+    <pre class="report" id="report"></pre>
+    <div class="row">
+      <button class="btn secondary" id="restartBtn" type="button">再嚟一輪</button>
+    </div>
+  </div>
+
+<script>
+const BASIC = [
+  { kr:"안녕하세요", zh:"你好", rom:"annyeonghaseyo" },
+  { kr:"감사합니다", zh:"謝謝", rom:"gamsahamnida" },
+  { kr:"네", zh:"是／好的", rom:"ne" },
+  { kr:"아니요", zh:"不是", rom:"aniyo" },
+  { kr:"물", zh:"水", rom:"mul" },
+  { kr:"밥", zh:"飯", rom:"bap" },
+  { kr:"사람", zh:"人", rom:"saram" },
+  { kr:"친구", zh:"朋友", rom:"chingu" },
+  { kr:"이름", zh:"名字", rom:"ireum" },
+  { kr:"엄마", zh:"媽媽", rom:"eomma" },
+  { kr:"아빠", zh:"爸爸", rom:"appa" },
+  { kr:"사랑", zh:"愛", rom:"sarang" },
+  { kr:"집", zh:"家", rom:"jip" },
+  { kr:"시간", zh:"時間", rom:"sigan" },
+  { kr:"오늘", zh:"今天", rom:"oneul" },
+  { kr:"내일", zh:"明天", rom:"naeil" },
+];
+const SCHOOL = [
+  { kr:"학교", zh:"學校", rom:"hakgyo" },
+  { kr:"선생님", zh:"老師", rom:"seonsaengnim" },
+  { kr:"학생", zh:"學生", rom:"haksaeng" },
+  { kr:"교실", zh:"課室", rom:"gyosil" },
+  { kr:"책", zh:"書", rom:"chaek" },
+  { kr:"펜", zh:"筆", rom:"pen" },
+  { kr:"숙제", zh:"功課", rom:"sukje" },
+  { kr:"시험", zh:"考試", rom:"siheom" },
+  { kr:"수업", zh:"堂課", rom:"sueop" },
+  { kr:"공부", zh:"溫習／學習", rom:"gongbu" },
+  { kr:"질문", zh:"問題", rom:"jilmun" },
+  { kr:"답", zh:"答案", rom:"dap" },
+  { kr:"칠판", zh:"黑板", rom:"chilpan" },
+  { kr:"가방", zh:"書包", rom:"gabang" },
+  { kr:"도서관", zh:"圖書館", rom:"doseogwan" },
+  { kr:"방학", zh:"假期", rom:"banghak" },
+];
+const VERBS = [
+  { kr:"가다", zh:"去", rom:"gada" },
+  { kr:"오다", zh:"來", rom:"oda" },
+  { kr:"먹다", zh:"吃", rom:"meokda" },
+  { kr:"마시다", zh:"喝", rom:"masida" },
+  { kr:"보다", zh:"看", rom:"boda" },
+  { kr:"듣다", zh:"聽", rom:"deutda" },
+  { kr:"읽다", zh:"讀", rom:"ikda" },
+  { kr:"쓰다", zh:"寫／用", rom:"sseuda" },
+  { kr:"자다", zh:"瞓", rom:"jada" },
+  { kr:"일어나다", zh:"起身", rom:"ireonada" },
+  { kr:"공부하다", zh:"溫習", rom:"gongbuhada" },
+  { kr:"말하다", zh:"講", rom:"malhada" },
+  { kr:"좋다", zh:"好", rom:"jota" },
+  { kr:"많다", zh:"多", rom:"manta" },
+  { kr:"작다", zh:"細", rom:"jakda" },
+  { kr:"크다", zh:"大", rom:"keuda" },
+];
+const MIX = [
+  { kr:"어제", zh:"琴日", rom:"eoje" },
+  { kr:"지금", zh:"而家", rom:"jigeum" },
+  { kr:"어디", zh:"邊度", rom:"eodi" },
+  { kr:"무엇", zh:"咩嘢", rom:"mueot" },
+  { kr:"누구", zh:"邊個", rom:"nugu" },
+  { kr:"왜", zh:"點解", rom:"wae" },
+  { kr:"어떻게", zh:"點樣", rom:"eotteoke" },
+  { kr:"괜찮아요", zh:"冇問題", rom:"gwaenchanayo" },
+  { kr:"미안합니다", zh:"對唔住", rom:"mianhamnida" },
+  { kr:"천천히", zh:"慢慢", rom:"cheoncheonhi" },
+  { kr:"빨리", zh:"快啲", rom:"ppalli" },
+  { kr:"숙제", zh:"功課", rom:"sukje" },
+  { kr:"시험", zh:"考試", rom:"siheom" },
+  { kr:"도서관", zh:"圖書館", rom:"doseogwan" },
+  { kr:"읽다", zh:"讀", rom:"ikda" },
+  { kr:"쓰다", zh:"寫／用", rom:"sseuda" },
+  { kr:"일어나다", zh:"起身", rom:"ireonada" },
+  { kr:"공부하다", zh:"溫習", rom:"gongbuhada" },
+];
+const WEAK = [
+  { kr:"어떻게", zh:"點樣", rom:"eotteoke" },
+  { kr:"어제", zh:"琴日", rom:"eoje" },
+  { kr:"읽다", zh:"讀", rom:"ikda" },
+  { kr:"쓰다", zh:"寫／用", rom:"sseuda" },
+  { kr:"일어나다", zh:"起身", rom:"ireonada" },
+  { kr:"공부하다", zh:"溫習", rom:"gongbuhada" },
+  { kr:"숙제", zh:"功課", rom:"sukje" },
+  { kr:"시험", zh:"考試", rom:"siheom" },
+];
+const CONTRAST = [
+  { kr:"어디", zh:"邊度", rom:"eodi" },
+  { kr:"오늘", zh:"今天", rom:"oneul" },
+  { kr:"내일", zh:"明天", rom:"naeil" },
+  { kr:"도서관", zh:"圖書館", rom:"doseogwan" },
+  { kr:"빨리", zh:"快啲", rom:"ppalli" },
+  { kr:"지금", zh:"而家", rom:"jigeum" },
+];
+const REVIEW = WEAK.concat(WEAK, CONTRAST);
+
+const PACKS = {
+  review: { label: "錯題加強", cards: REVIEW },
+  mix: { label: "進階混合", cards: MIX },
+  school: { label: "學校生活", cards: SCHOOL },
+  verbs: { label: "動詞形容詞", cards: VERBS },
+  basic: { label: "常用字", cards: BASIC },
+};
+
+let pack = "review";
+let mode = "kr2zh";
+let deck = [];
+let index = 0;
+let score = 0;
+let picked = null;
+let log = [];
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+}
+function uniqueByKr(cards) {
+  const seen = {};
+  const out = [];
+  for (const c of cards) {
+    if (seen[c.kr]) continue;
+    seen[c.kr] = true;
+    out.push(c);
+  }
+  return out;
+}
+function pickChoices(correct, all) {
+  const pool = uniqueByKr(all).filter(c => c.kr !== correct.kr);
+  const distractors = shuffle(pool).slice(0, 3).map(c => mode === "kr2zh" ? c.zh : c.kr);
+  const right = mode === "kr2zh" ? correct.zh : correct.kr;
+  return shuffle([right].concat(distractors));
+}
+function modeLabel() { return mode === "kr2zh" ? "睇韓揀中" : "睇中揀韓"; }
+function packLabel() { return PACKS[pack].label; }
+function buildReport() {
+  const ok = log.filter(x => x.ok).map(x => `- ${x.kr} = ${x.zh} (${x.rom})`);
+  const bad = log.filter(x => !x.ok).map(x => `- ${x.kr} = ${x.zh} (${x.rom})｜你揀：${x.chosen}`);
+  return [
+    `成績：${score}/${deck.length}｜模式：${modeLabel()}｜練習：${packLabel()}`,
+    "答啱：",
+    ok.length ? ok.join("\n") : "- （無）",
+    "答錯：",
+    bad.length ? bad.join("\n") : "- （無）",
+  ].join("\n");
+}
+
+function renderSeg(el, options, current, onChange) {
+  el.innerHTML = "";
+  options.forEach(opt => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = opt.label;
+    if (opt.value === current) b.classList.add("active");
+    b.onclick = () => onChange(opt.value);
+    el.appendChild(b);
+  });
+}
+
+function resetRound() {
+  deck = shuffle(PACKS[pack].cards);
+  index = 0;
+  score = 0;
+  picked = null;
+  log = [];
+  document.getElementById("copyMsg").textContent = "撳「複製明細」，再貼去同韓仔聊天。";
+  showQuiz();
+}
+
+function showQuiz() {
+  document.getElementById("quizCard").classList.remove("hidden");
+  document.getElementById("resultCard").classList.add("hidden");
+  if (index >= deck.length) {
+    showResult();
+    return;
+  }
+  const card = deck[index];
+  const prompt = mode === "kr2zh" ? card.kr : card.zh;
+  document.getElementById("progress").textContent = `第 ${index + 1}／${deck.length} 題 · ${packLabel()}`;
+  document.getElementById("scoreLive").textContent = `目前分數：${score}`;
+  document.getElementById("qLabel").textContent = mode === "kr2zh" ? "呢個韓文係咩意思？" : "點樣用韓文講？";
+  document.getElementById("prompt").textContent = prompt;
+  const fb = document.getElementById("feedback");
+  fb.className = "feedback";
+  fb.textContent = "揀下面其中一個答案。";
+  document.getElementById("nextBtn").classList.add("hidden");
+  const choices = pickChoices(card, PACKS[pack].cards);
+  const box = document.getElementById("choices");
+  box.innerHTML = "";
+  choices.forEach(c => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = c;
+    b.onclick = () => onPick(c, b, choices);
+    box.appendChild(b);
+  });
+}
+
+function onPick(choice, btn, choices) {
+  if (picked !== null) return;
+  const card = deck[index];
+  const correct = mode === "kr2zh" ? card.zh : card.kr;
+  picked = choice;
+  const ok = choice === correct;
+  if (ok) score += 1;
+  log.push({ kr: card.kr, zh: card.zh, rom: card.rom, ok, chosen: choice });
+  const fb = document.getElementById("feedback");
+  if (ok) {
+    fb.className = "feedback ok";
+    fb.textContent = `啱！拼音：${card.rom}`;
+  } else {
+    fb.className = "feedback bad";
+    fb.textContent = `唔啱。正確係：${correct}　拼音：${card.rom}`;
+  }
+  Array.from(document.getElementById("choices").children).forEach(el => {
+    el.disabled = true;
+    const t = el.textContent.replace(/^✓ |^✗ /, "");
+    if (t === correct) {
+      el.classList.add("correct");
+      el.textContent = "✓ " + t;
+    } else if (t === choice) {
+      el.classList.add("wrong");
+      el.textContent = "✗ " + t;
+    }
+  });
+  document.getElementById("scoreLive").textContent = `目前分數：${score}`;
+  document.getElementById("nextBtn").classList.remove("hidden");
+}
+
+function showResult() {
+  document.getElementById("quizCard").classList.add("hidden");
+  document.getElementById("resultCard").classList.remove("hidden");
+  document.getElementById("resultTitle").textContent = `完成！你答啱 ${score}／${deck.length} 題`;
+  document.getElementById("report").textContent = buildReport();
+}
+
+document.getElementById("nextBtn").onclick = () => {
+  picked = null;
+  index += 1;
+  showQuiz();
+};
+document.getElementById("restartBtn").onclick = resetRound;
+document.getElementById("copyBtn").onclick = async () => {
+  const text = buildReport();
+  const msg = document.getElementById("copyMsg");
+  try {
+    await navigator.clipboard.writeText(text);
+    msg.textContent = "已複製！直接貼去同韓仔聊天就得。";
+  } catch (e) {
+    msg.textContent = "一鍵複製唔成功，請長按下面明細手動複製。";
+  }
+};
+
+const PACK_OPTS = [
+  { value: "review", label: "錯題" },
+  { value: "mix", label: "進階" },
+  { value: "school", label: "學校" },
+  { value: "verbs", label: "動詞" },
+  { value: "basic", label: "常用" },
+];
+const MODE_OPTS = [
+  { value: "kr2zh", label: "睇韓揀中" },
+  { value: "zh2kr", label: "睇中揀韓" },
+];
+
+function redrawPacks() {
+  renderSeg(document.getElementById("packSeg"), PACK_OPTS, pack, v => {
+    pack = v;
+    resetRound();
+    redrawPacks();
+  });
+}
+function redrawModes() {
+  renderSeg(document.getElementById("modeSeg"), MODE_OPTS, mode, v => {
+    mode = v;
+    resetRound();
+    redrawModes();
+  });
+}
+
+redrawPacks();
+redrawModes();
+resetRound();
+
+</script>
+</body>
+</html>
