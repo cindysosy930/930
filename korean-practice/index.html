@@ -122,7 +122,24 @@
     margin: 8px 0 0;
   }
   .meta { color: var(--muted); font-size: 0.85rem; }
-  .hidden { display: none; }
+  .hidden { display: none !important; }
+  .next-bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    margin: 12px -16px -16px;
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+    background: linear-gradient(to top, var(--card) 70%, rgba(255,255,255,0));
+    display: flex;
+    justify-content: stretch;
+  }
+  .next-bar .btn {
+    width: 100%;
+    min-height: 48px;
+    font-size: 1.05rem;
+    border-radius: 14px;
+  }
+  body { padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
 </style>
 </head>
 <body>
@@ -152,9 +169,8 @@
     <div class="prompt" id="prompt"></div>
     <div class="feedback" id="feedback">揀下面其中一個答案。</div>
     <div class="choices" id="choices"></div>
-    <div class="row">
-      <span></span>
-      <button class="btn hidden" id="nextBtn" type="button">下一題</button>
+    <div class="next-bar hidden" id="nextBar">
+      <button class="btn" id="nextBtn" type="button">下一題</button>
     </div>
   </div>
 
@@ -357,7 +373,7 @@ function showQuiz() {
   const fb = document.getElementById("feedback");
   fb.className = "feedback";
   fb.textContent = "揀下面其中一個答案。";
-  document.getElementById("nextBtn").classList.add("hidden");
+  document.getElementById("nextBar").classList.add("hidden");
   const choices = pickChoices(card, PACKS[pack].cards);
   const box = document.getElementById("choices");
   box.innerHTML = "";
@@ -398,7 +414,7 @@ function onPick(choice, btn, choices) {
     }
   });
   document.getElementById("scoreLive").textContent = `目前分數：${score}`;
-  document.getElementById("nextBtn").classList.remove("hidden");
+  document.getElementById("nextBar").classList.remove("hidden");
 }
 
 function showResult() {
