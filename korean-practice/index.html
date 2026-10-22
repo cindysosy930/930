@@ -144,10 +144,10 @@
 </head>
 <body>
   <h1>韓文初階練習</h1>
-  <p class="sub">手機可開 · 答完顯示拼音 · 結束可一鍵複製明細貼畀韓仔</p>
+  <p class="sub">手機可開 · 每次 10–15 題 · 答完顯示拼音 · 結束可複製明細貼畀韓仔</p>
 
   <div class="card info" id="note">
-    根據你進階混合 10／18：問句詞較穩；動詞（읽다／쓰다）同 어떻게、어제、숙제、시험 要加強。預設「錯題加強」＋睇韓揀中。
+    每次 10–15 題。根據你錯題加強 12／22：숙제／읽다／쓰다 易撈亂；어제↔오늘；일어나다、시험 要溫。預設「錯題加強」＋睇韓揀中。
   </div>
 
   <div class="card">
@@ -262,24 +262,25 @@ const MIX = [
   { kr:"공부하다", zh:"溫習", rom:"gongbuhada" },
 ];
 const WEAK = [
-  { kr:"어떻게", zh:"點樣", rom:"eotteoke" },
-  { kr:"어제", zh:"琴日", rom:"eoje" },
+  { kr:"숙제", zh:"功課", rom:"sukje" },
   { kr:"읽다", zh:"讀", rom:"ikda" },
   { kr:"쓰다", zh:"寫／用", rom:"sseuda" },
+  { kr:"어제", zh:"琴日", rom:"eoje" },
+  { kr:"오늘", zh:"今天", rom:"oneul" },
   { kr:"일어나다", zh:"起身", rom:"ireonada" },
-  { kr:"공부하다", zh:"溫習", rom:"gongbuhada" },
-  { kr:"숙제", zh:"功課", rom:"sukje" },
   { kr:"시험", zh:"考試", rom:"siheom" },
+  { kr:"공부하다", zh:"溫習", rom:"gongbuhada" },
 ];
 const CONTRAST = [
-  { kr:"어디", zh:"邊度", rom:"eodi" },
-  { kr:"오늘", zh:"今天", rom:"oneul" },
   { kr:"내일", zh:"明天", rom:"naeil" },
+  { kr:"어디", zh:"邊度", rom:"eodi" },
+  { kr:"어떻게", zh:"點樣", rom:"eotteoke" },
+  { kr:"지금", zh:"而家", rom:"jigeum" },
   { kr:"도서관", zh:"圖書館", rom:"doseogwan" },
   { kr:"빨리", zh:"快啲", rom:"ppalli" },
-  { kr:"지금", zh:"而家", rom:"jigeum" },
 ];
-const REVIEW = WEAK.concat(WEAK, CONTRAST);
+/* 錯字加權重複，對照字較少 */
+const REVIEW = WEAK.concat(WEAK, WEAK, CONTRAST);
 
 const PACKS = {
   review: { label: "錯題加強", cards: REVIEW },
@@ -347,8 +348,22 @@ function renderSeg(el, options, current, onChange) {
   });
 }
 
+const ROUND_MIN = 10;
+const ROUND_MAX = 15;
+
+function buildDeck(cards) {
+  const target = ROUND_MIN + Math.floor(Math.random() * (ROUND_MAX - ROUND_MIN + 1));
+  let out = shuffle(cards);
+  if (out.length >= target) return out.slice(0, target);
+  const uniq = uniqueByKr(cards);
+  while (out.length < target) {
+    out = out.concat(shuffle(uniq.length ? uniq : cards));
+  }
+  return out.slice(0, target);
+}
+
 function resetRound() {
-  deck = shuffle(PACKS[pack].cards);
+  deck = buildDeck(PACKS[pack].cards);
   index = 0;
   score = 0;
   picked = null;
