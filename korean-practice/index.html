@@ -147,8 +147,7 @@
   <p class="sub">手機可開 · 每次 10–15 題 · 答完顯示拼音 · 結束可複製明細貼畀韓仔</p>
 
   <div class="card info" id="note">
-    每次 10–15 題。每次 10–15 題。新增「食物」包（泡菜、拌飯、好味等）。學校 9／10 好穩；수업 可再溫。預設「食物」。
-  </div>
+    每次 10–15 題。新增「文法을／를」：撳掣揀을或를，唔使打韓文。預設開呢個包。</div>
 
   <div class="card">
     <div class="label">揀練習</div>
@@ -311,7 +310,28 @@ const CONTRAST = [
 /* 錯字加權重複，對照字較少 */
 const REVIEW = WEAK.concat(WEAK, WEAK, CONTRAST);
 
+
+const EUL = [
+  { blank:"사과___ 먹어요。", zh:"食蘋果", rom:"sagwa-reul meogeoyo", answer:"를", full:"사과를 먹어요" },
+  { blank:"물___ 마셔요。", zh:"飲水", rom:"mul-eul masyeoyo", answer:"을", full:"물을 마셔요" },
+  { blank:"책___ 읽어요。", zh:"讀書", rom:"chaek-eul ilgeoyo", answer:"을", full:"책을 읽어요" },
+  { blank:"친구___ 만나요。", zh:"見朋友", rom:"chingu-reul mannayo", answer:"를", full:"친구를 만나요" },
+  { blank:"밥___ 먹어요。", zh:"食飯", rom:"bab-eul meogeoyo", answer:"을", full:"밥을 먹어요" },
+  { blank:"커피___ 마셔요。", zh:"飲咖啡", rom:"keopi-reul masyeoyo", answer:"를", full:"커피를 마셔요" },
+  { blank:"김치___ 먹어요。", zh:"食泡菜", rom:"gimchi-reul meogeoyo", answer:"를", full:"김치를 먹어요" },
+  { blank:"숙제___ 해요。", zh:"做功課", rom:"sukje-reul haeyo", answer:"를", full:"숙제를 해요" },
+  { blank:"영화___ 봐요。", zh:"睇戲", rom:"yeonghwa-reul bwayo", answer:"를", full:"영화를 봐요" },
+  { blank:"음악___ 들어요。", zh:"聽音樂", rom:"eumak-eul deureoyo", answer:"을", full:"음악을 들어요" },
+  { blank:"이름___ 써요。", zh:"寫名", rom:"ireum-eul sseoyo", answer:"을", full:"이름을 써요" },
+  { blank:"빵___ 사요。", zh:"買麵包", rom:"ppang-eul sayo", answer:"을", full:"빵을 사요" },
+  { blank:"선생님___ 만나요。", zh:"見老師", rom:"seonsaengnim-eul mannayo", answer:"을", full:"선생님을 만나요" },
+  { blank:"과일___ 먹어요。", zh:"食生果", rom:"gwail-eul meogeoyo", answer:"을", full:"과일을 먹어요" },
+  { blank:"편지___ 써요。", zh:"寫信", rom:"pyeonji-reul sseoyo", answer:"를", full:"편지를 써요" },
+  { blank:"한국어___ 공부해요。", zh:"學韓文", rom:"hangugeo-reul gongbuhaeyo", answer:"를", full:"한국어를 공부해요" },
+];
+
 const PACKS = {
+  eul: { label: "文法을／를", cards: EUL, kind: "particle" },
   food: { label: "食物", cards: FOOD },
   review: { label: "錯題加強", cards: REVIEW },
   mix: { label: "進階混合", cards: MIX },
@@ -320,7 +340,7 @@ const PACKS = {
   basic: { label: "常用字", cards: BASIC },
 };
 
-let pack = "food";
+let pack = "eul";
 let mode = "kr2zh";
 let deck = [];
 let index = 0;
@@ -340,8 +360,9 @@ function uniqueByKr(cards) {
   const seen = {};
   const out = [];
   for (const c of cards) {
-    if (seen[c.kr]) continue;
-    seen[c.kr] = true;
+    const key = c.kr || c.blank || c.full;
+    if (seen[key]) continue;
+    seen[key] = true;
     out.push(c);
   }
   return out;
@@ -352,11 +373,23 @@ function pickChoices(correct, all) {
   const right = mode === "kr2zh" ? correct.zh : correct.kr;
   return shuffle([right].concat(distractors));
 }
-function modeLabel() { return mode === "kr2zh" ? "睇韓揀中" : "睇中揀韓"; }
+function isParticle() { return PACKS[pack].kind === "particle"; }
+function modeLabel() {
+  if (isParticle()) return "揀을／를";
+  return mode === "kr2zh" ? "睇韓揀中" : "睇中揀韓";
+}
 function packLabel() { return PACKS[pack].label; }
 function buildReport() {
-  const ok = log.filter(x => x.ok).map(x => `- ${x.kr} = ${x.zh} (${x.rom})`);
-  const bad = log.filter(x => !x.ok).map(x => `- ${x.kr} = ${x.zh} (${x.rom})｜你揀：${x.chosen}`);
+  const ok = log.filter(x => x.ok).map(x =>
+    isParticle()
+      ? `- ${x.full}（${x.rom}）= ${x.zh}`
+      : `- ${x.kr} = ${x.zh} (${x.rom})`
+  );
+  const bad = log.filter(x => !x.ok).map(x =>
+    isParticle()
+      ? `- ${x.blank}｜正解：${x.answer}｜你揀：${x.chosen}｜${x.full}（${x.rom}）`
+      : `- ${x.kr} = ${x.zh} (${x.rom})｜你揀：${x.chosen}`
+  );
   return [
     `成績：${score}/${deck.length}｜模式：${modeLabel()}｜練習：${packLabel()}`,
     "答啱：",
@@ -410,16 +443,24 @@ function showQuiz() {
     return;
   }
   const card = deck[index];
-  const prompt = mode === "kr2zh" ? card.kr : card.zh;
   document.getElementById("progress").textContent = `第 ${index + 1}／${deck.length} 題 · ${packLabel()}`;
   document.getElementById("scoreLive").textContent = `目前分數：${score}`;
-  document.getElementById("qLabel").textContent = mode === "kr2zh" ? "呢個韓文係咩意思？" : "點樣用韓文講？";
-  document.getElementById("prompt").textContent = prompt;
   const fb = document.getElementById("feedback");
   fb.className = "feedback";
-  fb.textContent = "揀下面其中一個答案。";
   document.getElementById("nextBar").classList.add("hidden");
-  const choices = pickChoices(card, PACKS[pack].cards);
+  let choices;
+  if (isParticle()) {
+    document.getElementById("qLabel").textContent = "揀을定를？（" + card.zh + "）";
+    document.getElementById("prompt").textContent = card.blank;
+    fb.textContent = "有받침用을，無用를。撳下面掣。";
+    choices = shuffle(["을", "를"]);
+  } else {
+    const prompt = mode === "kr2zh" ? card.kr : card.zh;
+    document.getElementById("qLabel").textContent = mode === "kr2zh" ? "呢個韓文係咩意思？" : "點樣用韓文講？";
+    document.getElementById("prompt").textContent = prompt;
+    fb.textContent = "揀下面其中一個答案。";
+    choices = pickChoices(card, PACKS[pack].cards);
+  }
   const box = document.getElementById("choices");
   box.innerHTML = "";
   choices.forEach(c => {
@@ -434,18 +475,26 @@ function showQuiz() {
 function onPick(choice, btn, choices) {
   if (picked !== null) return;
   const card = deck[index];
-  const correct = mode === "kr2zh" ? card.zh : card.kr;
+  const correct = isParticle() ? card.answer : (mode === "kr2zh" ? card.zh : card.kr);
   picked = choice;
   const ok = choice === correct;
   if (ok) score += 1;
-  log.push({ kr: card.kr, zh: card.zh, rom: card.rom, ok, chosen: choice });
+  if (isParticle()) {
+    log.push({ blank: card.blank, zh: card.zh, rom: card.rom, answer: card.answer, full: card.full, ok, chosen: choice });
+  } else {
+    log.push({ kr: card.kr, zh: card.zh, rom: card.rom, ok, chosen: choice });
+  }
   const fb = document.getElementById("feedback");
   if (ok) {
     fb.className = "feedback ok";
-    fb.textContent = `啱！拼音：${card.rom}`;
+    fb.textContent = isParticle()
+      ? `啱！${card.full}　拼音：${card.rom}`
+      : `啱！拼音：${card.rom}`;
   } else {
     fb.className = "feedback bad";
-    fb.textContent = `唔啱。正確係：${correct}　拼音：${card.rom}`;
+    fb.textContent = isParticle()
+      ? `唔啱。正解：${card.answer} → ${card.full}　拼音：${card.rom}`
+      : `唔啱。正確係：${correct}　拼音：${card.rom}`;
   }
   Array.from(document.getElementById("choices").children).forEach(el => {
     el.disabled = true;
@@ -487,6 +536,7 @@ document.getElementById("copyBtn").onclick = async () => {
 };
 
 const PACK_OPTS = [
+  { value: "eul", label: "을／를" },
   { value: "food", label: "食物" },
   { value: "review", label: "錯題" },
   { value: "mix", label: "進階" },
@@ -499,9 +549,14 @@ const MODE_OPTS = [
   { value: "zh2kr", label: "睇中揀韓" },
 ];
 
+function syncModeVisibility() {
+  const modeCard = document.getElementById("modeSeg").closest(".card");
+  if (modeCard) modeCard.classList.toggle("hidden", isParticle());
+}
 function redrawPacks() {
   renderSeg(document.getElementById("packSeg"), PACK_OPTS, pack, v => {
     pack = v;
+    syncModeVisibility();
     resetRound();
     redrawPacks();
   });
@@ -516,6 +571,7 @@ function redrawModes() {
 
 redrawPacks();
 redrawModes();
+syncModeVisibility();
 resetRound();
 
 </script>
