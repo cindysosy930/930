@@ -4,3 +4,4 @@
 
 - [水循環互動模擬](https://cindysosy930.github.io/930/water-cycle/)
 - [Ca＋水實驗模擬](https://cindysosy930.github.io/930/ca-water-lab-sim/)
+- [溶解・粒子模型](https://cindysosy930.github.io/930/dissolve-particle-sim/)
