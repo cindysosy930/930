@@ -1,0 +1,1331 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>溶解・粒子模型｜可溶／不可溶／溶解速率</title>
+<style>
+  :root {
+    --bg: #f7f3e8;
+    --ink: #2a2a2a;
+    --orange: #e07a20;
+    --orange-dark: #c45f0a;
+    --sugar: #c45a2a;
+    --sand: #b8893a;
+    --sand-dark: #8a6428;
+    --water: #6bb3d9;
+    --panel: #fffdf7;
+    --border: #e8dfc8;
+    --shadow: rgba(40, 30, 10, 0.12);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    font-family: "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    overflow: hidden;
+    touch-action: manipulation;
+  }
+  .app {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    position: relative;
+  }
+  header {
+    padding: 4px 12px 0;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  header h1 {
+    margin: 0;
+    font-size: clamp(1rem, 3.2vw, 1.25rem);
+    font-weight: 700;
+    color: var(--orange-dark);
+  }
+  header .sub {
+    margin: 1px 0 0;
+    font-size: clamp(0.68rem, 2vw, 0.8rem);
+    color: #666;
+  }
+  .mode-bar {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    padding: 4px 118px 2px 10px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+  .mode-chip {
+    appearance: none;
+    border: 2px solid var(--border);
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: clamp(0.74rem, 2.2vw, 0.88rem);
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    min-height: 38px;
+    background: var(--panel);
+    color: #666;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.06);
+  }
+  .mode-chip:active { transform: translateY(1px); }
+  .mode-chip.active {
+    background: linear-gradient(180deg, #f0a020, #d88810);
+    border-color: #c45f0a;
+    color: #fff;
+  }
+  .stage-bar {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    padding: 2px 12px 4px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+  .stage-chip {
+    appearance: none;
+    border: 2px solid var(--border);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: clamp(0.72rem, 2.2vw, 0.85rem);
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    min-height: 38px;
+    background: var(--panel);
+    color: #666;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.06);
+  }
+  .stage-chip:active { transform: translateY(1px); }
+  .stage-chip.active {
+    background: linear-gradient(180deg, #6bb3d9, #3a8fbf);
+    border-color: #2a7aa8;
+    color: #fff;
+  }
+  .hidden { display: none !important; }
+  .canvas-wrap {
+    flex: 1 1 auto;
+    min-height: 50vh;
+    margin: 2px 8px;
+    background: var(--panel);
+    border: 2px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 4px 16px var(--shadow);
+    position: relative;
+    overflow: hidden;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+  }
+  .legend {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 2px 10px;
+    flex-shrink: 0;
+    font-size: clamp(0.7rem, 2vw, 0.82rem);
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+  }
+  .dot {
+    border-radius: 50%;
+    flex-shrink: 0;
+    border: 1.5px solid rgba(0,0,0,0.15);
+  }
+  .dot.sugar { background: var(--sugar); width: 16px; height: 16px; }
+  .dot.sand { background: var(--sand); width: 16px; height: 16px; }
+  .dot.water { background: var(--water); width: 12px; height: 12px; }
+  .tag { font-size: 0.7rem; color: #888; font-weight: 500; }
+  /* Wide: 左因素掣 + 右「溶解所需時間」; narrow wraps */
+  .factors-timer-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 8px;
+    padding: 2px 8px 2px;
+    flex-shrink: 0;
+  }
+  .factors {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 0;
+    flex: 1 1 280px;
+    min-width: 0;
+  }
+  .factor-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .factor-row .flabel {
+    font-size: clamp(0.68rem, 2vw, 0.78rem);
+    font-weight: 700;
+    color: #555;
+    min-width: 4.2em;
+  }
+  .factor-btns {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    flex: 1;
+  }
+  .fbtn {
+    appearance: none;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: 4px 10px;
+    font-size: clamp(0.68rem, 2vw, 0.78rem);
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    min-height: 34px;
+    background: var(--panel);
+    color: #555;
+  }
+  .fbtn.active {
+    background: linear-gradient(180deg, #f0a020, #d88810);
+    border-color: #c45f0a;
+    color: #fff;
+  }
+  /* Top-right action strip: 預計速率 (rate) + ▶/↺ — always on-screen, never clipped */
+  .top-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 2px 10px 4px;
+    flex-shrink: 0;
+    min-height: 44px;
+  }
+  .speed-meter {
+    text-align: right;
+    font-size: clamp(0.72rem, 2.1vw, 0.84rem);
+    font-weight: 700;
+    color: var(--orange-dark);
+    padding: 1px 6px;
+    min-height: 1.2em;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .app:not(.rate-mode) .speed-meter {
+    visibility: hidden;
+  }
+  .corner-play {
+    position: static;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+    flex: 0 0 auto;
+    max-width: 100%;
+    pointer-events: none;
+  }
+  .corner-play .btn {
+    pointer-events: auto;
+    min-width: 0;
+    min-height: 40px;
+    padding: 6px 12px;
+    font-size: clamp(0.78rem, 2.2vw, 0.88rem);
+    border-radius: 12px;
+    box-shadow: 0 3px 10px rgba(40, 30, 10, 0.18);
+  }
+  .corner-play .btn.primary {
+    min-width: 84px;
+  }
+  /* contents → timer-box sits beside .factors */
+  .timer-panel {
+    display: contents;
+  }
+  .timer-panel.hidden { display: none !important; }
+  .timer-box {
+    flex: 0 1 220px;
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background: var(--panel);
+    border: 2px solid #e8a54b;
+    border-radius: 10px;
+    padding: 6px 12px;
+    text-align: center;
+    min-width: 140px;
+    max-width: 280px;
+    box-sizing: border-box;
+  }
+  .timer-box .tlabel {
+    font-size: clamp(0.66rem, 1.9vw, 0.75rem);
+    font-weight: 700;
+    color: #666;
+  }
+  .timer-box .tvalue {
+    font-size: clamp(1.15rem, 4vw, 1.55rem);
+    font-weight: 800;
+    color: var(--orange-dark);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+  }
+  .timer-box .tnote {
+    font-size: clamp(0.64rem, 1.8vw, 0.74rem);
+    color: #777;
+    font-weight: 600;
+    min-height: 1.1em;
+  }
+  .controls {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 4px 10px 4px;
+    flex-shrink: 0;
+    z-index: 5;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+  /* rate mode: factors + timer take vertical space — keep canvas a bit smaller */
+  .app.rate-mode .canvas-wrap {
+    min-height: 36vh;
+    flex: 1 1 36vh;
+  }
+  .app.rate-mode .hint {
+    display: none; /* free space; factors + timer already explain */
+  }
+  .app:not(.rate-mode) .factors-timer-row {
+    display: none;
+  }
+  .app.rate-mode .factors-timer-row {
+    padding-top: 2px;
+    padding-bottom: 0;
+  }
+  .app.rate-mode .factors {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+  .app.rate-mode .timer-box {
+    min-width: 150px;
+  }
+  .app.rate-mode .status {
+    padding-top: 0;
+  }
+  .btn {
+    appearance: none;
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 8px 14px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    min-height: 40px;
+    min-width: 0;
+    background: var(--panel);
+    color: var(--ink);
+    box-shadow: 0 2px 0 rgba(0,0,0,0.08);
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn.primary {
+    background: linear-gradient(180deg, #f0a020, #d88810);
+    border-color: #c45f0a;
+    color: #fff;
+  }
+  .btn.secondary {
+    background: #fff;
+    border-color: #c9b896;
+  }
+  .slider-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 4px;
+  }
+  .slider-row label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #555;
+    white-space: nowrap;
+  }
+  .slider-row .pct {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--orange-dark);
+    min-width: 2.8em;
+    text-align: right;
+  }
+  input[type="range"] {
+    flex: 1;
+    height: 36px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    margin: 0;
+  }
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 10px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #e8dfc8, #f0a020);
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid var(--orange-dark);
+    margin-top: -9px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    cursor: pointer;
+  }
+  input[type="range"]::-moz-range-track {
+    height: 10px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #e8dfc8, #f0a020);
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid var(--orange-dark);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    cursor: pointer;
+  }
+  .status {
+    text-align: center;
+    font-size: clamp(0.7rem, 2.1vw, 0.84rem);
+    font-weight: 700;
+    color: var(--orange-dark);
+    padding: 1px 10px 0;
+    flex-shrink: 0;
+    min-height: 1.25em;
+  }
+  .hint {
+    margin: 2px 8px calc(6px + env(safe-area-inset-bottom));
+    padding: 6px 10px;
+    background: var(--panel);
+    border: 1.5px solid #e8a54b;
+    border-radius: 10px;
+    font-size: clamp(0.68rem, 2vw, 0.8rem);
+    line-height: 1.4;
+    flex-shrink: 0;
+    color: #1a1a1a;
+  }
+  .hint strong { color: var(--orange-dark); }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>溶解・粒子模型</h1>
+    <p class="sub" id="headerSub">糖（溶質）＋水（溶劑）→ 糖溶液（溶液）</p>
+  </header>
+
+  <div class="mode-bar" role="tablist" aria-label="模式">
+    <button type="button" class="mode-chip active" data-mode="soluble">可溶</button>
+    <button type="button" class="mode-chip" data-mode="insoluble">不可溶</button>
+    <button type="button" class="mode-chip" data-mode="rate">溶解速率</button>
+  </div>
+
+  <div class="stage-bar" id="stageBar" role="tablist" aria-label="階段">
+    <button type="button" class="stage-chip active" data-stage="0">溶解前</button>
+    <button type="button" class="stage-chip" data-stage="0.45">溶解中</button>
+    <button type="button" class="stage-chip" data-stage="1">溶解後</button>
+  </div>
+
+  <div class="top-actions" aria-label="播放控制">
+    <div class="speed-meter" id="speedMeter">預計速率：中等</div>
+    <div class="corner-play">
+      <button type="button" class="btn primary" id="btnPlay">▶ 播放</button>
+      <button type="button" class="btn secondary" id="btnReset">↺ 重置</button>
+    </div>
+  </div>
+
+  <div class="factors-timer-row">
+    <div class="factors hidden" id="factorsPanel">
+      <div class="factor-row">
+        <span class="flabel">攪拌</span>
+        <div class="factor-btns" data-factor="stir">
+          <button type="button" class="fbtn" data-val="0">無</button>
+          <button type="button" class="fbtn active" data-val="1">有</button>
+          <button type="button" class="fbtn" data-val="2">強</button>
+        </div>
+      </div>
+      <div class="factor-row">
+        <span class="flabel">溫度</span>
+        <div class="factor-btns" data-factor="temp">
+          <button type="button" class="fbtn" data-val="0">低溫</button>
+          <button type="button" class="fbtn active" data-val="1">常溫</button>
+          <button type="button" class="fbtn" data-val="2">高溫</button>
+        </div>
+      </div>
+      <div class="factor-row">
+        <span class="flabel">溶質大小</span>
+        <div class="factor-btns" data-factor="size">
+          <button type="button" class="fbtn" data-val="0">大粒</button>
+          <button type="button" class="fbtn active" data-val="1">中粒</button>
+          <button type="button" class="fbtn" data-val="2">細粒</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="timer-panel hidden" id="timerPanel">
+      <div class="timer-box">
+        <div class="tlabel" id="timerLabel">計時中</div>
+        <div class="tvalue" id="timerValue">0.0 秒</div>
+        <div class="tnote" id="timerNote">按「播放」開始計時</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="slider-row">
+      <label for="progress">進度</label>
+      <input type="range" id="progress" min="0" max="1000" value="0">
+      <span class="pct" id="pct">0%</span>
+    </div>
+  </div>
+
+  <div class="canvas-wrap">
+    <canvas id="cv" aria-label="溶解粒子模型動畫"></canvas>
+  </div>
+
+  <div class="legend" id="legend">
+    <span class="legend-item"><span class="dot sugar" id="soluteDot"></span><span id="soluteLabel">糖粒子（溶質）</span></span>
+    <span class="legend-item"><span class="dot water"></span>水粒子（溶劑）</span>
+    <span class="tag" id="legendTag">溶液＝溶質＋溶劑均勻混合</span>
+  </div>
+
+  <p class="status" id="status">溶解前：糖粒成團；水粒子到處有。按「播放」睇溶解。</p>
+
+  <div class="hint" id="hint">
+    <strong>課堂重點：</strong>糖粒在水中溶解時會拆開，形成十分微細的糖粒子，均勻散入水粒子之間，變成<strong>糖溶液</strong>。水是<strong>溶劑</strong>，糖是<strong>溶質</strong>。
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var canvas = document.getElementById('cv');
+  var ctx = canvas.getContext('2d');
+  var btnPlay = document.getElementById('btnPlay');
+  var btnReset = document.getElementById('btnReset');
+  var slider = document.getElementById('progress');
+  var pctEl = document.getElementById('pct');
+  var statusEl = document.getElementById('status');
+  var hintEl = document.getElementById('hint');
+  var headerSub = document.getElementById('headerSub');
+  var stageBar = document.getElementById('stageBar');
+  var factorsPanel = document.getElementById('factorsPanel');
+  var speedMeter = document.getElementById('speedMeter');
+  var soluteLabel = document.getElementById('soluteLabel');
+  var soluteDot = document.getElementById('soluteDot');
+  var legendTag = document.getElementById('legendTag');
+  var timerPanel = document.getElementById('timerPanel');
+  var timerLabel = document.getElementById('timerLabel');
+  var timerValue = document.getElementById('timerValue');
+  var timerNote = document.getElementById('timerNote');
+  var chips = Array.prototype.slice.call(document.querySelectorAll('.stage-chip'));
+  var modeChips = Array.prototype.slice.call(document.querySelectorAll('.mode-chip'));
+
+  var mode = 'soluble'; // soluble | insoluble | rate
+  var progress = 0;
+  var playing = false;
+  var lastTs = 0;
+  var BASE_DURATION = 7000;
+  var dpr = 1, W = 0, H = 0;
+  var sugar = [], water = [], sand = [];
+  var layout = null;
+  var animTime = 0;
+
+  // rate factors: 0 low, 1 mid, 2 high
+  var factors = { stir: 1, temp: 1, size: 1 };
+
+  // timing (rate mode): wall-clock elapsed while playing
+  var timingActive = false;
+  var timingAccumMs = 0;
+  var timingLastTs = 0;
+  var timingFinished = false;
+  var lastFinishSec = null;
+
+  var SUGAR = '#c45a2a', SUGAR_E = '#9a3d18';
+  var SAND = '#b8893a', SAND_E = '#8a6428';
+  var WATER = '#6bb3d9', WATER_E = '#3a8fbf';
+
+  function rand(a, b) { return a + Math.random() * (b - a); }
+  function ease(t) {
+    t = Math.max(0, Math.min(1, t));
+    return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+  }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+
+  function rateMultiplier() {
+    // stir: 0.55 / 1 / 1.55 ; temp: 0.55 / 1 / 1.6 ; size: large=slow 0.5, mid=1, fine=1.7
+    var stirM = [0.5, 1.0, 1.65][factors.stir];
+    var tempM = [0.5, 1.0, 1.7][factors.temp];
+    var sizeM = [0.45, 1.0, 1.75][factors.size];
+    return stirM * tempM * sizeM;
+  }
+
+  function durationMs() {
+    if (mode === 'rate') return Math.max(2200, BASE_DURATION / rateMultiplier());
+    if (mode === 'insoluble') return 6500;
+    return BASE_DURATION;
+  }
+
+  function speedLabel() {
+    var m = rateMultiplier();
+    if (m < 0.55) return '很慢';
+    if (m < 0.9) return '慢';
+    if (m < 1.4) return '中等';
+    if (m < 2.5) return '快';
+    return '很快';
+  }
+
+  function updateSpeedMeter() {
+    var est = durationMs() / 1000;
+    speedMeter.textContent = '預計速率：' + speedLabel() + '　·　預計約 ' + est.toFixed(1) + ' 秒（細粒＋高溫＋強攪拌最快）';
+  }
+
+  function factorDesc() {
+    return '攪拌' + ['無', '有', '強'][factors.stir]
+      + '／溫度' + ['低', '常', '高'][factors.temp]
+      + '／' + ['大粒', '中粒', '細粒'][factors.size];
+  }
+  function formatSec(ms) {
+    return (Math.max(0, ms) / 1000).toFixed(1);
+  }
+  function resetTiming(keepFinishedNote) {
+    timingActive = false;
+    timingAccumMs = 0;
+    timingLastTs = 0;
+    timingFinished = false;
+    if (!keepFinishedNote) lastFinishSec = null;
+    updateTimerUI();
+  }
+  function updateTimerUI() {
+    if (mode !== 'rate') return;
+    var secStr = formatSec(timingAccumMs);
+    if (timingFinished && lastFinishSec != null) {
+      timerLabel.textContent = '溶解所需時間';
+      timerValue.textContent = lastFinishSec.toFixed(1) + ' 秒';
+      timerNote.textContent = '今次約 ' + lastFinishSec.toFixed(1) + ' 秒　·　' + factorDesc();
+    } else if (timingActive || timingAccumMs > 0) {
+      timerLabel.textContent = '計時中';
+      timerValue.textContent = secStr + ' 秒';
+      timerNote.textContent = playing ? ('進行中… ' + factorDesc()) : ('已暫停　·　' + factorDesc());
+    } else {
+      timerLabel.textContent = '計時';
+      timerValue.textContent = '0.0 秒';
+      timerNote.textContent = '按「播放」開始計時　·　' + factorDesc();
+    }
+  }
+  function recordFinish(sec) {
+    lastFinishSec = sec;
+    timingFinished = true;
+    updateTimerUI();
+  }
+
+  var appEl = document.querySelector('.app');
+
+  function applyModeUI() {
+    modeChips.forEach(function (c) {
+      c.classList.toggle('active', c.getAttribute('data-mode') === mode);
+    });
+    if (appEl) appEl.classList.toggle('rate-mode', mode === 'rate');
+    if (mode === 'soluble') {
+      stageBar.classList.remove('hidden');
+      factorsPanel.classList.add('hidden');
+      timerPanel.classList.add('hidden');
+      headerSub.textContent = '糖（溶質）＋水（溶劑）→ 糖溶液（溶液）';
+      soluteLabel.textContent = '糖粒子（溶質）';
+      soluteDot.className = 'dot sugar';
+      legendTag.textContent = '溶液＝溶質＋溶劑均勻混合';
+      chips[0].textContent = '溶解前';
+      chips[1].textContent = '溶解中';
+      chips[2].textContent = '溶解後';
+      hintEl.innerHTML = '<strong>可溶對照：</strong>糖粒會<strong>拆開</strong>成微細粒子，均勻散入水中，形成<strong>溶液</strong>。溶質＝糖，溶劑＝水。';
+    } else if (mode === 'insoluble') {
+      stageBar.classList.remove('hidden');
+      factorsPanel.classList.add('hidden');
+      timerPanel.classList.add('hidden');
+      headerSub.textContent = '沙（不溶物）＋水 → 唔成溶液（沉底／成團）';
+      soluteLabel.textContent = '沙粒子（不溶）';
+      soluteDot.className = 'dot sand';
+      legendTag.textContent = '不可溶＝唔拆散、唔均勻溶解';
+      chips[0].textContent = '混合前';
+      chips[1].textContent = '混合中';
+      chips[2].textContent = '混合後';
+      hintEl.innerHTML = '<strong>不可溶對照：</strong>沙粒入水後<strong>唔拆散、唔溶解</strong>，大多<strong>沉底</strong>或保持成團——唔會變成均勻溶液。對比：可溶＝拆散均勻；不可溶＝仍成團／沉底。';
+    } else {
+      stageBar.classList.add('hidden');
+      factorsPanel.classList.remove('hidden');
+      timerPanel.classList.remove('hidden');
+      headerSub.textContent = '影響溶解速率：攪拌 · 溫度 · 溶質大小（表面積）';
+      soluteLabel.textContent = '糖粒子（溶質）';
+      soluteDot.className = 'dot sugar';
+      legendTag.textContent = '調因素 → 睇溶解快慢同所需時間';
+      hintEl.innerHTML = '<strong>溶解速率因素：</strong><strong>攪拌</strong>加快接觸；<strong>溫度</strong>愈高粒子運動愈快；<strong>細粒</strong>（表面積大）比大粒溶得快。播完會顯示「溶解所需時間」。';
+      updateSpeedMeter();
+      updateTimerUI();
+    }
+  }
+
+  function resize() {
+    var rect = canvas.parentElement.getBoundingClientRect();
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = Math.max(280, Math.floor(rect.width));
+    H = Math.max(260, Math.floor(rect.height));
+    canvas.width = Math.floor(W * dpr);
+    canvas.height = Math.floor(H * dpr);
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    build();
+    draw();
+  }
+
+  function build() {
+    sugar = [];
+    water = [];
+    sand = [];
+    var cx = W * 0.5;
+    var cy = H * 0.52;
+    var R = Math.min(W, H) * 0.42;
+    var sizeFactor = mode === 'rate' ? [1.35, 1.0, 0.62][factors.size] : 1;
+    var sR = Math.max(6.5, Math.min(W, H) * 0.03) * sizeFactor;
+    var wR = Math.max(4.5, Math.min(W, H) * 0.03) * 0.48;
+
+    layout = { cx: cx, cy: cy, R: R, sR: sR, wR: wR };
+
+    // Soluble / rate: sugar clusters
+    var nPer = mode === 'rate'
+      ? [5, 8, 14][factors.size]
+      : 8;
+    var clusters = [
+      { x: cx - R * 0.42, y: cy - R * 0.18, n: nPer },
+      { x: cx - R * 0.08, y: cy + R * 0.32, n: Math.max(4, nPer - 1) }
+    ];
+    var si = 0;
+    var totalS = clusters[0].n + clusters[1].n;
+    clusters.forEach(function (cl, ci) {
+      for (var i = 0; i < cl.n; i++) {
+        var ang = (i / cl.n) * Math.PI * 2 + ci * 0.5;
+        var rad = sR * (0.4 + (i % 3) * 0.55);
+        var ox = cl.x + Math.cos(ang) * rad;
+        var oy = cl.y + Math.sin(ang) * rad;
+        var tang = (si * 2.399963229) % (Math.PI * 2);
+        var trad = Math.sqrt((si + 0.4) / Math.max(1, totalS)) * (R * 0.78);
+        sugar.push({
+          ox: ox, oy: oy,
+          tx: cx + Math.cos(tang) * trad,
+          ty: cy + Math.sin(tang) * trad * 0.92,
+          r: sR * (mode === 'rate' && factors.size === 0 ? rand(0.9, 1.15) : 1),
+          phase: rand(0, Math.PI * 2),
+          delay: 0.02 + si * 0.012,
+          ci: ci
+        });
+        si++;
+      }
+    });
+
+    // Insoluble: sand clusters → sink to bottom
+    var sandClusters = [
+      { x: cx - R * 0.35, y: cy - R * 0.25, n: 9 },
+      { x: cx + R * 0.1, y: cy - R * 0.05, n: 8 }
+    ];
+    var sdi = 0;
+    sandClusters.forEach(function (cl, ci) {
+      for (var i = 0; i < cl.n; i++) {
+        var ang = (i / cl.n) * Math.PI * 2 + ci * 0.4;
+        var rad = sR * (0.35 + (i % 3) * 0.5);
+        var ox = cl.x + Math.cos(ang) * rad;
+        var oy = cl.y + Math.sin(ang) * rad;
+        // Target: settle near bottom, still somewhat clumped
+        var bottomY = cy + R * 0.62;
+        var spreadX = (ci === 0 ? -0.25 : 0.2) * R + Math.cos(ang) * sR * 1.1;
+        sand.push({
+          ox: ox, oy: oy,
+          tx: cx + spreadX,
+          ty: bottomY + Math.sin(ang) * sR * 0.6,
+          r: sR * rand(0.85, 1.1),
+          phase: rand(0, Math.PI * 2),
+          delay: 0.05 + sdi * 0.02,
+          ci: ci
+        });
+        sdi++;
+      }
+    });
+
+    var nW = Math.floor(55 + Math.min(W, H) * 0.1);
+    for (var w = 0; w < nW; w++) {
+      var wang = rand(0, Math.PI * 2);
+      var wrad = Math.sqrt(Math.random()) * (R * 0.9);
+      water.push({
+        x: cx + Math.cos(wang) * wrad,
+        y: cy + Math.sin(wang) * wrad,
+        r: wR * rand(0.85, 1.12),
+        jp: rand(0, Math.PI * 2),
+        ja: rand(0.3, 1.1)
+      });
+    }
+  }
+
+  function ball(x, y, r, fill, edge) {
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = fill;
+    ctx.fill();
+    ctx.strokeStyle = edge;
+    ctx.lineWidth = Math.max(1, r * 0.12);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(x - r * 0.28, y - r * 0.28, r * 0.28, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.32)';
+    ctx.fill();
+  }
+
+  function frame(cx, cy, R, title) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,253,247,0.65)';
+    ctx.fill();
+    ctx.strokeStyle = '#d4c9a8';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+    if (title) {
+      ctx.fillStyle = '#2a2a2a';
+      ctx.font = 'bold ' + Math.round(Math.min(17, R * 0.16)) + 'px "PingFang TC","Noto Sans TC",sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(title, cx, cy - R - 6);
+    }
+  }
+
+  function fillWaterDisk(cx, cy, R, wr, time) {
+    var n = Math.min(90, Math.floor(R * R / (wr * wr * 3)));
+    for (var i = 0; i < n; i++) {
+      var ang = (i * 2.399963229) % (Math.PI * 2);
+      var rad = Math.sqrt((i + 0.35) / n) * R;
+      var jx = time ? Math.sin(time * 0.002 + i) * 0.6 : 0;
+      var jy = time ? Math.cos(time * 0.0025 + i * 1.1) * 0.6 : 0;
+      ball(cx + Math.cos(ang) * rad + jx, cy + Math.sin(ang) * rad + jy, wr, WATER, WATER_E);
+    }
+  }
+
+  function clusterAt(cx, cy, spread, n, r, fill, edge) {
+    fill = fill || SUGAR;
+    edge = edge || SUGAR_E;
+    for (var i = 0; i < n; i++) {
+      var ang = (i / n) * Math.PI * 2;
+      var rad = spread * (0.25 + (i % 3) * 0.32);
+      ball(cx + Math.cos(ang) * rad, cy + Math.sin(ang) * rad, r, fill, edge);
+    }
+  }
+
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function drawBanner(msg, color) {
+    ctx.font = 'bold 13px "PingFang TC",sans-serif';
+    var m = ctx.measureText(msg);
+    var bx = W / 2 - m.width / 2 - 12;
+    ctx.fillStyle = 'rgba(255,253,247,0.92)';
+    roundRect(bx, 8, m.width + 24, 26, 8);
+    ctx.fill();
+    ctx.fillStyle = color || '#c45f0a';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(msg, W / 2, 21);
+  }
+
+  /** Textbook three panels for soluble */
+  function drawTextbookSoluble(alpha) {
+    if (alpha < 0.02) return;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    var r = Math.min(W * 0.135, H * 0.26, 88);
+    var y = H * 0.5;
+    var x1 = W * 0.17, x2 = W * 0.5, x3 = W * 0.83;
+    var fs = Math.max(10, Math.round(r * 0.14));
+
+    frame(x1, y, r, '糖（溶質）');
+    clusterAt(x1 - r * 0.22, y - r * 0.12, r * 0.28, 7, layout.sR * 0.72);
+    clusterAt(x1 + r * 0.22, y + r * 0.28, r * 0.24, 6, layout.sR * 0.72);
+    ctx.fillStyle = SUGAR;
+    ctx.font = 'bold ' + fs + 'px "PingFang TC",sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('糖粒', x1 + r * 0.42, y - r * 0.42);
+
+    ctx.fillStyle = '#444';
+    ctx.font = 'bold ' + Math.round(r * 0.35) + 'px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('＋', (x1 + x2) / 2, y);
+
+    frame(x2, y, r, '水（溶劑）');
+    fillWaterDisk(x2, y, r * 0.86, layout.wR * 0.8, 0);
+
+    ctx.fillStyle = '#444';
+    ctx.font = 'bold ' + Math.round(r * 0.35) + 'px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('→', (x2 + x3) / 2, y);
+
+    frame(x3, y, r, '糖溶液（溶液）');
+    fillWaterDisk(x3, y, r * 0.86, layout.wR * 0.8, 0);
+    for (var i = 0; i < sugar.length; i++) {
+      var ang = (i * 2.399963229) % (Math.PI * 2);
+      var rad = Math.sqrt((i + 0.4) / Math.max(1, sugar.length)) * (r * 0.7);
+      ball(x3 + Math.cos(ang) * rad, y + Math.sin(ang) * rad, layout.sR * 0.65, SUGAR, SUGAR_E);
+    }
+    ctx.fillStyle = '#555';
+    ctx.font = 'bold ' + Math.max(9, fs - 1) + 'px "PingFang TC",sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText('糖粒溶解 → 微細糖粒子', x3, y + r + 6);
+    ctx.restore();
+  }
+
+  /** Textbook for insoluble contrast */
+  function drawTextbookInsoluble(alpha) {
+    if (alpha < 0.02) return;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    var r = Math.min(W * 0.135, H * 0.26, 88);
+    var y = H * 0.5;
+    var x1 = W * 0.17, x2 = W * 0.5, x3 = W * 0.83;
+    var fs = Math.max(10, Math.round(r * 0.14));
+
+    frame(x1, y, r, '沙（不溶）');
+    clusterAt(x1 - r * 0.2, y - r * 0.1, r * 0.28, 7, layout.sR * 0.72, SAND, SAND_E);
+    clusterAt(x1 + r * 0.2, y + r * 0.25, r * 0.24, 6, layout.sR * 0.72, SAND, SAND_E);
+
+    ctx.fillStyle = '#444';
+    ctx.font = 'bold ' + Math.round(r * 0.35) + 'px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('＋', (x1 + x2) / 2, y);
+
+    frame(x2, y, r, '水（溶劑）');
+    fillWaterDisk(x2, y, r * 0.86, layout.wR * 0.8, 0);
+
+    ctx.fillStyle = '#444';
+    ctx.font = 'bold ' + Math.round(r * 0.35) + 'px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('→', (x2 + x3) / 2, y);
+
+    frame(x3, y, r, '唔成溶液');
+    fillWaterDisk(x3, y, r * 0.86, layout.wR * 0.8, 0);
+    // sand settled at bottom
+    for (var i = 0; i < 12; i++) {
+      var sx = x3 - r * 0.4 + (i % 6) * r * 0.16;
+      var sy = y + r * 0.45 + Math.floor(i / 6) * r * 0.18;
+      ball(sx, sy, layout.sR * 0.6, SAND, SAND_E);
+    }
+    ctx.fillStyle = '#8a6428';
+    ctx.font = 'bold ' + Math.max(9, fs - 1) + 'px "PingFang TC",sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText('沙粒沉底／仍成團', x3, y + r + 6);
+    ctx.restore();
+  }
+
+  function stirJitter(time, strength) {
+    return {
+      x: Math.sin(time * 0.004 * (1 + strength)) * (1.2 + strength * 3),
+      y: Math.cos(time * 0.0035 * (1 + strength)) * (0.8 + strength * 2)
+    };
+  }
+
+  function drawDissolveSoluble(t, time) {
+    var L = layout;
+    // Rate mode has no textbook intro: always draw the particle scene
+    // (soluble mode fades in after the book panels; early return made rate canvas blank at t≈0).
+    var show;
+    if (mode === 'rate') {
+      show = 1;
+    } else {
+      show = Math.min(1, Math.max(0, (t - 0.02) / 0.18));
+      if (show < 0.02) return;
+    }
+
+    ctx.save();
+    ctx.globalAlpha = show;
+    var title;
+    if (mode === 'rate') {
+      title = t < 0.12 ? '糖 ＋ 水（開始）' : (t < 0.85 ? '溶解中…' : '糖溶液（溶液）');
+    } else {
+      title = t < 0.2 ? '糖 ＋ 水' : (t < 0.85 ? '溶解中…' : '糖溶液（溶液）');
+    }
+    frame(L.cx, L.cy, L.R, title);
+
+    var stirAmp = mode === 'rate' ? factors.stir : 1;
+    var tempAmp = mode === 'rate' ? [0.4, 1, 1.8][factors.temp] : 1;
+
+    for (var i = 0; i < water.length; i++) {
+      var w = water[i];
+      var jx = Math.sin(time * 0.002 * tempAmp + w.jp) * w.ja * (0.6 + stirAmp * 0.7);
+      var jy = Math.cos(time * 0.0024 * tempAmp + w.jp * 1.3) * w.ja * (0.6 + stirAmp * 0.7);
+      if (stirAmp > 0) {
+        var sj = stirJitter(time + i, stirAmp);
+        jx += sj.x * 0.15;
+        jy += sj.y * 0.15;
+      }
+      ball(w.x + jx, w.y + jy, w.r, WATER, WATER_E);
+    }
+
+    for (var s = 0; s < sugar.length; s++) {
+      var p = sugar[s];
+      var local = ease((t - p.delay) / (1 - p.delay * 0.55));
+      var mx = (p.ox + p.tx) / 2 + Math.sin(local * Math.PI + p.phase) * (18 + stirAmp * 8);
+      var my = (p.oy + p.ty) / 2 + Math.cos(local * Math.PI * 0.7 + p.phase) * (12 + stirAmp * 4);
+      var x = (1 - local) * (1 - local) * p.ox + 2 * (1 - local) * local * mx + local * local * p.tx;
+      var y = (1 - local) * (1 - local) * p.oy + 2 * (1 - local) * local * my + local * local * p.ty;
+      var bob = Math.sin(time * 0.003 * tempAmp + p.phase) * (0.4 + local * 0.8) * tempAmp;
+      if (stirAmp > 0 && local > 0.1) {
+        var sj2 = stirJitter(time + p.phase * 10, stirAmp);
+        x += sj2.x * local * 0.25;
+        y += sj2.y * local * 0.25;
+      }
+      ball(x, y + bob, p.r, SUGAR, SUGAR_E);
+    }
+
+    if (t < 0.28) {
+      var a = 1 - t / 0.28;
+      ctx.globalAlpha = show * a;
+      ctx.fillStyle = SUGAR;
+      ctx.font = 'bold 12px "PingFang TC",sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('糖粒', L.cx - L.R * 0.05, L.cy - L.R * 0.55);
+      ctx.fillStyle = WATER_E;
+      ctx.fillText('水粒子', L.cx + L.R * 0.25, L.cy - L.R * 0.7);
+    }
+
+    if (t > 0.72) {
+      ctx.globalAlpha = show * Math.min(1, (t - 0.72) / 0.18);
+      ctx.fillStyle = '#2a2a2a';
+      ctx.font = 'bold ' + Math.round(Math.min(13, L.R * 0.095)) + 'px "PingFang TC",sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      var endMsg = mode === 'rate'
+        ? '溶質粒子均勻散入溶劑 → 溶液（速率：' + speedLabel() + '）'
+        : '糖粒在水中溶解，形成十分微細的糖粒子';
+      ctx.fillText(endMsg, L.cx, L.cy + L.R + 8);
+    }
+    ctx.restore();
+
+    if (t > 0.2 && t < 0.9) {
+      var msg;
+      if (mode === 'rate') {
+        msg = t < 0.55
+          ? '溶解中… 攪拌／溫度／粒徑影響快慢'
+          : '溶質粒子均勻分佈 → 形成溶液';
+      } else {
+        msg = t < 0.55
+          ? '溶質粒子正從糖粒拆開，散入溶劑之間…'
+          : '溶質粒子均勻分佈 → 形成溶液';
+      }
+      drawBanner(msg, '#c45f0a');
+    }
+
+    // rate factor badges
+    if (mode === 'rate') {
+      ctx.font = 'bold 11px "PingFang TC",sans-serif';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      var badges = [
+        '攪拌：' + ['無', '有', '強'][factors.stir],
+        '溫度：' + ['低', '常', '高'][factors.temp],
+        '粒徑：' + ['大', '中', '細'][factors.size]
+      ];
+      var bx = 10, by = H - 22;
+      badges.forEach(function (b, i) {
+        ctx.fillStyle = 'rgba(255,253,247,0.9)';
+        roundRect(bx + i * 78, by, 74, 18, 6);
+        ctx.fill();
+        ctx.fillStyle = '#c45f0a';
+        ctx.fillText(b, bx + i * 78 + 6, by + 3);
+      });
+    }
+  }
+
+  function drawInsoluble(t, time) {
+    var L = layout;
+    var show = Math.min(1, Math.max(0, (t - 0.02) / 0.18));
+    if (show < 0.02) return;
+
+    ctx.save();
+    ctx.globalAlpha = show;
+    var title = t < 0.2 ? '沙 ＋ 水' : (t < 0.75 ? '混合中…' : '唔成溶液（沉底）');
+    frame(L.cx, L.cy, L.R, title);
+
+    for (var i = 0; i < water.length; i++) {
+      var w = water[i];
+      var jx = Math.sin(time * 0.002 + w.jp) * w.ja;
+      var jy = Math.cos(time * 0.0024 + w.jp * 1.3) * w.ja;
+      ball(w.x + jx, w.y + jy, w.r, WATER, WATER_E);
+    }
+
+    // Sand: sink / stay clumped — never evenly dissolve
+    for (var s = 0; s < sand.length; s++) {
+      var p = sand[s];
+      var local = ease((t - p.delay) / (1 - p.delay * 0.4));
+      // slight wobble but mostly go to bottom cluster
+      var mx = (p.ox + p.tx) / 2 + Math.sin(local * Math.PI + p.phase) * 8;
+      var my = (p.oy + p.ty) / 2 - Math.sin(local * Math.PI) * 6; // brief lift then fall
+      var x = (1 - local) * (1 - local) * p.ox + 2 * (1 - local) * local * mx + local * local * p.tx;
+      var y = (1 - local) * (1 - local) * p.oy + 2 * (1 - local) * local * my + local * local * p.ty;
+      // keep neighbours slightly clustered (pull toward cluster center)
+      var pull = local * 0.15;
+      var cxCl = p.ci === 0 ? L.cx - L.R * 0.22 : L.cx + L.R * 0.18;
+      x = lerp(x, cxCl + (x - cxCl) * 0.7, pull);
+      ball(x, y, p.r, SAND, SAND_E);
+    }
+
+    if (t < 0.28) {
+      var a = 1 - t / 0.28;
+      ctx.globalAlpha = show * a;
+      ctx.fillStyle = SAND_E;
+      ctx.font = 'bold 12px "PingFang TC",sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('沙粒', L.cx - L.R * 0.1, L.cy - L.R * 0.55);
+      ctx.fillStyle = WATER_E;
+      ctx.fillText('水粒子', L.cx + L.R * 0.25, L.cy - L.R * 0.7);
+    }
+
+    if (t > 0.7) {
+      ctx.globalAlpha = show * Math.min(1, (t - 0.7) / 0.2);
+      ctx.fillStyle = '#2a2a2a';
+      ctx.font = 'bold ' + Math.round(Math.min(13, L.R * 0.095)) + 'px "PingFang TC",sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText('沙粒唔溶解——沉底／仍成團（唔成溶液）', L.cx, L.cy + L.R + 8);
+    }
+    ctx.restore();
+
+    if (t > 0.2 && t < 0.9) {
+      var msg = t < 0.55
+        ? '沙粒入水… 唔拆散成微細粒子'
+        : '不可溶：粒子仍成團／沉底，唔均勻混合';
+      drawBanner(msg, '#8a6428');
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#fffdf7';
+    ctx.fillRect(0, 0, W, H);
+
+    var bookA = progress < 0.08 ? 1 : Math.max(0, 1 - (progress - 0.08) / 0.12);
+    var liveT = progress < 0.08 ? 0 : (progress - 0.08) / 0.92;
+    var now = animTime || performance.now();
+
+    if (mode === 'insoluble') {
+      if (bookA > 0.02) drawTextbookInsoluble(bookA);
+      if (progress >= 0.08) drawInsoluble(liveT, now);
+      if (progress >= 0.995) {
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = '#fffdf7';
+        ctx.fillRect(0, 0, W, H);
+        drawInsoluble(1, now);
+      }
+    } else {
+      // soluble or rate
+      if (mode === 'soluble' && bookA > 0.02) drawTextbookSoluble(bookA);
+      if (mode === 'rate') {
+        // rate mode skips textbook; draw dissolve for full 0→1 progress
+        // (must not reuse soluble's liveT remap that expects a book intro)
+        drawDissolveSoluble(progress, now);
+      } else {
+        if (progress >= 0.08) drawDissolveSoluble(liveT, now);
+        if (progress >= 0.995) {
+          ctx.clearRect(0, 0, W, H);
+          ctx.fillStyle = '#fffdf7';
+          ctx.fillRect(0, 0, W, H);
+          drawDissolveSoluble(1, now);
+        }
+      }
+    }
+  }
+
+  function setProgress(p) {
+    progress = Math.max(0, Math.min(1, p));
+    slider.value = Math.round(progress * 1000);
+    pctEl.textContent = Math.round(progress * 100) + '%';
+
+    if (mode !== 'rate') {
+      chips.forEach(function (c) { c.classList.remove('active'); });
+      if (progress < 0.15) chips[0].classList.add('active');
+      else if (progress < 0.88) chips[1].classList.add('active');
+      else chips[2].classList.add('active');
+    }
+
+    if (mode === 'soluble') {
+      if (progress < 0.08) statusEl.textContent = '溶解前：糖粒成團；水粒子到處有。按「播放」睇溶解。';
+      else if (progress < 0.45) statusEl.textContent = '溶解中：糖粒開始拆開，糖粒子進入水中…';
+      else if (progress < 0.85) statusEl.textContent = '溶解中：糖粒子逐漸散開，均勻分佈在水粒子之間。';
+      else statusEl.textContent = '溶解後：形成糖溶液——溶質粒子均勻散入溶劑之中。';
+    } else if (mode === 'insoluble') {
+      if (progress < 0.08) statusEl.textContent = '混合前：沙粒成團；水粒子到處有。按「播放」睇對照。';
+      else if (progress < 0.45) statusEl.textContent = '混合中：沙粒入水，但唔拆散成微細粒子…';
+      else if (progress < 0.85) statusEl.textContent = '混合中：沙粒下沉／保持成團——唔均勻散開。';
+      else statusEl.textContent = '混合後：唔成溶液——沙粒沉底或仍成團（不可溶）。';
+    } else {
+      var tSec = timingFinished && lastFinishSec != null ? lastFinishSec.toFixed(1) : formatSec(timingAccumMs);
+      if (progress < 0.15) statusEl.textContent = '開始溶解… 速率：' + speedLabel() + '　·　計時 ' + tSec + ' 秒';
+      else if (progress < 0.85) statusEl.textContent = '溶解進行中（' + speedLabel() + '）　·　已用 ' + tSec + ' 秒';
+      else if (timingFinished && lastFinishSec != null) statusEl.textContent = '溶解完成！今次約 ' + lastFinishSec.toFixed(1) + ' 秒（' + factorDesc() + '）。';
+      else statusEl.textContent = '溶解完成。細粒＋高溫＋攪拌最快；大粒＋低溫＋無攪拌最慢。';
+      updateTimerUI();
+    }
+    draw();
+  }
+
+  function tick(ts) {
+    animTime = ts;
+    if (!playing) { lastTs = 0; timingLastTs = 0; draw(); return; }
+    if (!lastTs) lastTs = ts;
+    if (mode === 'rate' && timingActive) {
+      if (!timingLastTs) timingLastTs = ts;
+      timingAccumMs += (ts - timingLastTs);
+      timingLastTs = ts;
+    }
+    var next = progress + (ts - lastTs) / durationMs();
+    lastTs = ts;
+    if (next >= 1) {
+      if (mode === 'rate' && timingActive) {
+        timingActive = false;
+        timingLastTs = 0;
+        recordFinish(timingAccumMs / 1000);
+      }
+      setProgress(1);
+      playing = false;
+      btnPlay.textContent = '▶ 播放';
+      lastTs = 0;
+      requestAnimationFrame(function (t) { animTime = t; draw(); });
+      return;
+    }
+    setProgress(next);
+    requestAnimationFrame(tick);
+  }
+
+  function play() {
+    // finished → restart from 0 with fresh clock
+    if (progress >= 0.999) {
+      setProgress(0);
+      if (mode === 'rate') resetTiming(false);
+    }
+    if (mode === 'rate') {
+      if (progress < 0.001 && !timingFinished) resetTiming(false);
+      if (!timingFinished) {
+        timingActive = true;
+        timingLastTs = 0; // resume or fresh: accumulate from now
+      }
+      updateTimerUI();
+    }
+    playing = true;
+    btnPlay.textContent = '⏸ 暫停';
+    lastTs = 0;
+    requestAnimationFrame(tick);
+  }
+  function pause() {
+    playing = false;
+    btnPlay.textContent = '▶ 播放';
+    lastTs = 0;
+    if (mode === 'rate') {
+      timingActive = false;
+      timingLastTs = 0; // freeze accumulated ms
+      updateTimerUI();
+    }
+  }
+
+  function switchMode(m) {
+    pause();
+    mode = m;
+    applyModeUI();
+    // rate-mode class changes canvas min-height — reflow before rebuild
+    resize();
+    if (mode === 'rate') resetTiming(false);
+    setProgress(0);
+  }
+
+  btnPlay.addEventListener('click', function () { playing ? pause() : play(); });
+  btnReset.addEventListener('click', function () {
+    pause();
+    if (mode === 'rate') resetTiming(false);
+    setProgress(0);
+  });
+  slider.addEventListener('input', function () {
+    pause();
+    if (mode === 'rate') resetTiming(false);
+    setProgress(Number(slider.value) / 1000);
+  });
+  chips.forEach(function (chip) {
+    chip.addEventListener('click', function () {
+      pause();
+      setProgress(Number(chip.getAttribute('data-stage')));
+    });
+  });
+  modeChips.forEach(function (chip) {
+    chip.addEventListener('click', function () {
+      switchMode(chip.getAttribute('data-mode'));
+    });
+  });
+
+  // factor buttons
+  Array.prototype.forEach.call(document.querySelectorAll('.factor-btns'), function (group) {
+    var key = group.getAttribute('data-factor');
+    Array.prototype.forEach.call(group.querySelectorAll('.fbtn'), function (btn) {
+      btn.addEventListener('click', function () {
+        Array.prototype.forEach.call(group.querySelectorAll('.fbtn'), function (b) {
+          b.classList.remove('active');
+        });
+        btn.classList.add('active');
+        factors[key] = Number(btn.getAttribute('data-val'));
+        updateSpeedMeter();
+        pause();
+        build();
+        if (mode === 'rate') resetTiming(false);
+        setProgress(0);
+      });
+    });
+  });
+
+  window.addEventListener('resize', function () { resize(); setProgress(progress); });
+  if (window.ResizeObserver) {
+    new ResizeObserver(function () { resize(); setProgress(progress); }).observe(canvas.parentElement);
+  }
+
+  applyModeUI();
+  resize();
+  setProgress(0);
+  (function idle() {
+    if (!playing) {
+      animTime = performance.now();
+      draw();
+    }
+    requestAnimationFrame(idle);
+  })();
+})();
+</script>
+</body>
+</html>
