@@ -193,7 +193,7 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
   overscroll-behavior: contain;
 }
 .canvas.empty::after {
-  content: "由左欄長按元件，再拖入底板組裝（元件長度＝一格，兩端扣相鄰金屬柱）";
+  content: "由左欄點一下元件，就會出現在底板（元件長度＝一格，兩端扣相鄰金屬柱）";
   position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;
   color: #9a9488; font-size: 0.95rem; pointer-events: none;
@@ -527,8 +527,8 @@ footer {
 <body>
 <header>
   <h1>技能教室 8.1　砌電路</h1>
-  <p>自由拖拉導片、燈泡、開關、電池（一格長）· 扣上金屬柱 · 閉合就亮燈</p>
-  <span class="tip">套裝：長按拖出 · 畫布自由擺位 · 點選後橫／直轉 · 開關旁開／關 · 一格長吸附</span>
+  <p>點一下加入導片、燈泡、開關、電池（一格長）· 再拖到金屬柱 · 閉合就亮燈</p>
+  <span class="tip">套裝：點一下加入底板 · 再拖到金屬柱 · 點選後橫／直轉 · 開關旁開／關 · 一格長吸附</span>
 </header>
 
 <div class="toolbar">
@@ -541,12 +541,12 @@ footer {
 
 <div class="main">
   <aside class="palette" id="palette-aside" aria-label="元件套裝">
-    <h2>元件套裝<br/>長按拖出 · 輕掃捲動</h2>
+    <h2>元件套裝<br/>點一下加入 · 輕掃捲動</h2>
     <div class="palette-list" id="palette"></div>
   </aside>
   <div class="workspace">
     <div class="canvas-label">
-      <span>底板 5×5 — 自由拖放組裝</span>
+      <span>底板 5×5 — 點一下加入，再拖到金屬柱</span>
       <span>點選後橫／直轉 · 開關旁開／關 · 點電池調極性</span>
     </div>
     <div class="canvas-row">
@@ -1175,7 +1175,7 @@ function renderPalette() {
     const div = document.createElement('div');
     div.className = 'palette-item' + (left <= 0 ? ' used' : '');
     div.dataset.type = inst.id;
-    div.innerHTML = `<div class="thumb">${inst.svg}</div><div class="label">${inst.name}</div><div class="hint">可拖出</div>`;
+    div.innerHTML = `<div class="thumb">${inst.svg}</div><div class="label">${inst.name}</div><div class="hint">點一下加入</div>`;
     if (left > 0) div.addEventListener('pointerdown', onPaletteDown);
     paletteEl.appendChild(div);
   });
@@ -1421,6 +1421,38 @@ function renderPieces() {
   updateBulbVisuals();
 }
 
+function placeFromPalette(type) {
+  const inst = findInst(type);
+  if (!inst || usedCount(type) >= inst.qty) {
+    setStatus(inst ? '「' + inst.name + '」已用完' : '未能加入');
+    return null;
+  }
+  const sz = instSize(type);
+  const piled = state.pieces.filter(q => !q.a && !q.b).length;
+  const step = 36;
+  const cols = 4;
+  const ox = (piled % cols) * step;
+  const oy = Math.floor(piled / cols) * step;
+  const x0 = (state.boardW - sz.w) / 2;
+  const y0 = (state.boardH - sz.h) / 2;
+  const maxX = Math.max(0, (state.boardW || canvas.clientWidth) - sz.w);
+  const maxY = Math.max(0, (state.boardH || canvas.clientHeight) - sz.h);
+  const x = Math.min(maxX, Math.max(0, x0 + ox));
+  const y = Math.min(maxY, Math.max(0, y0 + oy));
+  const p = addPiece(type, x, y);
+  if (!p) return null;
+  // Stay unsnapped near the centre, staggered so stacked taps stay visible.
+  p.a = null;
+  p.b = null;
+  p.x = x;
+  p.y = y;
+  p.rot = 0;
+  renderPieces();
+  updateCircuit();
+  setStatus('已加入「' + inst.name + '」——請拖到金屬柱，或點選後旋轉');
+  return p;
+}
+
 function addPiece(type, x, y) {
   const inst = findInst(type);
   if (!inst || usedCount(type) >= inst.qty) return null;
@@ -1521,7 +1553,7 @@ function flipBattery() {
   setStatus(p.flip ? '已調換極性（＋喺另一端）' : '已調換極性');
 }
 
-/* ===== Palette long-press / cross-drag ===== */
+/* ===== Palette tap-to-place (swipe still scrolls the list) ===== */
 function clearArmTimer() {
   if (state.drag && state.drag._timer) {
     clearTimeout(state.drag._timer);
@@ -1547,13 +1579,6 @@ function onPaletteDown(e) {
     _timer: null
   };
   srcEl.classList.add('armed');
-  state.drag._timer = setTimeout(() => {
-    if (!state.drag || state.drag.mode !== 'arm') return;
-    const d = state.drag;
-    try { if (d.srcEl && e.pointerId != null) d.srcEl.setPointerCapture(e.pointerId); } catch (_) {}
-    startPaletteGhost(d.type, { x: d.x0, y: d.y0 }, d.pointerId, d.srcEl);
-    setStatus('拖入底板…');
-  }, LONG_PRESS_MS);
 }
 
 function startPaletteGhost(type, xy, pointerId, srcEl) {
@@ -1627,23 +1652,13 @@ function onPointerMove(e) {
     const dy = xy.y - state.drag.y0;
     const dist = Math.hypot(dx, dy);
     const portrait = !!state.drag.portrait;
+    // Swiping the palette (or moving far) is not a tap — allow scroll, don't place.
     if (portrait) {
       if (Math.abs(dx) > MOVE_CANCEL_PX && Math.abs(dx) > Math.abs(dy) * 1.15) { cancelArm(); return; }
     } else {
       if (Math.abs(dy) > MOVE_CANCEL_PX && Math.abs(dy) > Math.abs(dx) * 1.15) { cancelArm(); return; }
     }
-    let cross = false;
-    if (portrait) {
-      if (Math.abs(dy) > CROSS_DRAG_PX && Math.abs(dy) >= Math.abs(dx) * 0.85) cross = true;
-    } else {
-      if (Math.abs(dx) > CROSS_DRAG_PX && Math.abs(dx) >= Math.abs(dy) * 0.85) cross = true;
-    }
-    if (cross || dist > 40) {
-      if (e.cancelable) e.preventDefault();
-      const { type, srcEl, pointerId } = state.drag;
-      try { if (srcEl && e.pointerId != null) srcEl.setPointerCapture(e.pointerId); } catch (_) {}
-      startPaletteGhost(type, xy, pointerId, srcEl);
-    }
+    if (dist > 28) { cancelArm(); return; }
     return;
   }
 
@@ -1683,7 +1698,9 @@ function onPointerUp(e) {
   const xy = ptrXY(e);
 
   if (state.drag.mode === 'arm') {
+    const type = state.drag.type;
     cancelArm();
+    placeFromPalette(type);
     return;
   }
 
@@ -2415,7 +2432,7 @@ document.addEventListener('keydown', (e) => {
 layoutPosts();
 renderPalette();
 updateEmpty();
-setStatus('就緒 —— 5×5 底板 · 元件一格長 · 長按拖出');
+setStatus('就緒 —— 5×5 底板 · 點一下套裝加入 · 再拖到金屬柱');
 })();
 </script>
 </body>
