@@ -1,0 +1,2393 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="format-detection" content="telephone=no" />
+<title>技能教室 8.1　砌電路</title>
+<style>
+:root {
+  --bg: #f3efe6;
+  --panel: #fffdf8;
+  --ink: #1c1c1c;
+  --muted: #5c5c5c;
+  --accent: #c45f0a;
+  --accent-soft: #fff0e0;
+  --border: #c4bdb0;
+  --canvas: #fffcf5;
+  --danger: #a31818;
+  --green: #3d9a4a;
+  --green-dark: #2d7a38;
+  --hit: 48px;
+  --palette-w: 118px;
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html { height: 100%; height: -webkit-fill-available; }
+html, body {
+  margin: 0; padding: 0;
+  font-family: "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", "Heiti TC", sans-serif;
+  background: var(--bg); color: var(--ink);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
+  overflow: hidden;
+  padding-top: var(--safe-t);
+  padding-right: var(--safe-r);
+  padding-bottom: var(--safe-b);
+  padding-left: var(--safe-l);
+}
+body.drag-lock { touch-action: none; }
+header {
+  flex-shrink: 0;
+  background: #243746;
+  color: #fff;
+  padding: 8px 12px 10px;
+}
+header h1 { margin: 0 0 3px; font-size: 1.05rem; font-weight: 700; }
+header p { margin: 0; font-size: 0.82rem; line-height: 1.4; opacity: 0.95; }
+header .tip {
+  margin-top: 5px; font-size: 0.72rem; opacity: 0.92;
+  background: rgba(255,255,255,0.12); display: inline-block;
+  padding: 2px 9px; border-radius: 999px;
+}
+.toolbar {
+  flex-shrink: 0;
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  padding: 7px 10px; background: var(--panel); border-bottom: 1px solid var(--border);
+}
+.toolbar .spacer { flex: 1; min-width: 6px; }
+button {
+  appearance: none; -webkit-appearance: none;
+  border: 1px solid var(--border); background: #fff;
+  color: var(--ink); border-radius: 10px; padding: 9px 12px;
+  font-size: 0.9rem; font-family: inherit;
+  min-height: var(--hit); min-width: var(--hit);
+  touch-action: manipulation; cursor: pointer;
+}
+button:active { background: var(--accent-soft); transform: scale(0.97); }
+button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+button.danger { color: var(--danger); border-color: #e0b0b0; }
+button.show-on { background: #3a7fb4; color: #fff; border-color: #2a6a9a; }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.main {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: row;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.palette {
+  flex: 0 0 var(--palette-w);
+  width: var(--palette-w);
+  max-width: var(--palette-w);
+  min-width: 0;
+  min-height: 0;
+  align-self: stretch;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  padding: 6px 4px 10px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+}
+.palette h2 {
+  margin: 0 0 6px; font-size: 0.7rem; color: var(--muted); font-weight: 600;
+  padding: 0 3px; line-height: 1.25;
+}
+.palette-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding-bottom: 40px;
+}
+.palette-item {
+  border: 1.5px dashed var(--border);
+  border-radius: 9px;
+  background: #fffcf5;
+  padding: 5px 2px 4px;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+  touch-action: pan-y;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-height: 88px;
+  flex-shrink: 0;
+  cursor: grab;
+}
+.palette-item.armed {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: 0 0 0 2px rgba(196,95,10,0.25);
+}
+.palette-item.dragging-src {
+  opacity: 0.35;
+  touch-action: none;
+}
+.palette-item .thumb {
+  width: 100%; height: 48px;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none; overflow: hidden;
+}
+.palette-item .thumb svg {
+  max-width: 96%; max-height: 46px; width: auto; height: auto; display: block;
+}
+.palette-item .label {
+  font-size: 0.68rem; font-weight: 700; text-align: center; line-height: 1.15;
+}
+.palette-item .hint {
+  font-size: 0.58rem; color: var(--muted); text-align: center;
+}
+
+.workspace {
+  flex: 1 1 auto;
+  display: flex; flex-direction: column;
+  min-height: 0; min-width: 0;
+  padding: 8px; gap: 6px;
+  overflow: hidden;
+}
+.canvas-row {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: row;
+  min-height: 0; min-width: 0;
+  gap: 8px;
+}
+.canvas-label {
+  flex-shrink: 0;
+  font-size: 0.8rem; color: var(--muted);
+  display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap;
+}
+.canvas {
+  flex: 1 1 auto;
+  position: relative;
+  min-height: 240px;
+  background:
+    radial-gradient(circle, rgba(0,0,0,0.06) 1px, transparent 1.5px) 0 0 / 22px 22px,
+    var(--canvas);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: none;
+  overscroll-behavior: contain;
+}
+.canvas.empty::after {
+  content: "由左欄長按元件，再拖入底板組裝（元件長度＝一格，兩端扣相鄰金屬柱）";
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: #9a9488; font-size: 0.95rem; pointer-events: none;
+  padding: 24px; text-align: center;
+  z-index: 1;
+}
+.posts-layer {
+  position: absolute; left: 0; top: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+.post-dot {
+  position: absolute;
+  width: 18px; height: 22px;
+  margin-left: -9px; margin-top: -16px;
+  pointer-events: none;
+}
+.post-dot svg { display: block; width: 18px; height: 22px; }
+
+.schematic-panel {
+  /* Hidden: keep in DOM but take no space. Avoid width:0+flex collapse
+     which left the canvas at 0×0 so drawSchematic painted nothing visible. */
+  flex: 0 0 0;
+  width: 0;
+  max-width: 0;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  background: var(--panel);
+  border-radius: 12px;
+  border: 2px solid transparent;
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+  min-height: 0;
+  transition: opacity 0.18s, border-color 0.18s;
+}
+.schematic-panel.visible {
+  flex: 0 0 auto;
+  width: min(38vw, 320px);
+  max-width: min(38vw, 320px);
+  opacity: 1;
+  pointer-events: auto;
+  border-color: var(--border);
+}
+.schematic-panel h2 {
+  margin: 0;
+  padding: 8px 10px 4px;
+  font-size: 0.88rem;
+  color: var(--accent);
+  text-align: center;
+  flex-shrink: 0;
+}
+.schematic-panel .schem-wrap {
+  flex: 1 1 auto;
+  position: relative;
+  min-height: 200px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.schematic-panel canvas {
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  min-height: 200px;
+  display: block;
+  background: #fffdf7;
+}
+#schem-hint-box {
+  display: none;
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px 12px 14px;
+}
+#schem-hint-box.show { display: block; }
+#schem-hint-box .hint-kicker {
+  margin: 0 0 8px;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+#schem-hint-box ol {
+  margin: 0;
+  padding-left: 1.3em;
+}
+#schem-hint-box li {
+  margin: 0 0 8px;
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+.schematic-panel.hint-only #schem-hint-box.show { flex: 1 1 auto; }
+.schematic-panel.hint-only .schem-wrap { display: none !important; }
+.schematic-panel.with-both #schem-hint-box {
+  flex: 0 1 auto;
+  max-height: 42%;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2px;
+}
+.schematic-panel.with-both .schem-wrap { display: flex; min-height: 140px; }
+
+.selection-bar {
+  flex-shrink: 0;
+  display: none;
+  flex-wrap: wrap; gap: 8px; align-items: center;
+  padding: 6px 4px;
+}
+.selection-bar.show { display: flex; }
+.selection-bar .name { font-weight: 700; font-size: 0.9rem; }
+
+footer {
+  flex-shrink: 0;
+  font-size: 0.72rem; color: var(--muted);
+  padding: 6px 12px 8px;
+  border-top: 1px solid var(--border);
+  background: var(--panel);
+}
+
+@media (max-width: 1100px) and (orientation: portrait), (max-width: 820px) {
+  .main { flex-direction: column; }
+  .palette {
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: none;
+    height: 138px;
+    max-height: 138px;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    overflow-y: hidden;
+    touch-action: pan-x;
+    padding: 6px 8px 8px;
+  }
+  .palette-list {
+    flex-direction: row;
+    padding-bottom: 0;
+    padding-right: 28px;
+    width: max-content;
+  }
+  .palette-item {
+    width: 96px;
+    min-height: 104px;
+    touch-action: pan-x;
+  }
+  .palette-item .thumb { height: 50px; }
+  .canvas-row { flex-direction: column; }
+  .schematic-panel.visible {
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: 100%;
+    height: 200px;
+    max-height: 42%;
+  }
+  .schematic-panel .schem-wrap { min-height: 160px; }
+  .schematic-panel canvas { min-height: 160px; }
+}
+
+.piece {
+  position: absolute;
+  left: 0; top: 0;
+  transform-origin: center center;
+  will-change: transform, left, top;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  z-index: 10;
+}
+.piece .piece-body {
+  position: relative;
+  touch-action: none;
+  cursor: grab;
+}
+.piece.selected .piece-body {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+.piece.dragging { opacity: 0.94; z-index: 5000 !important; }
+.piece .piece-body svg { display: block; pointer-events: none; }
+.piece .end-hit {
+  position: absolute;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  margin-left: -14px; margin-top: -14px;
+  touch-action: none;
+  cursor: grab;
+  z-index: 2;
+  background: transparent;
+}
+.piece.selected .end-hit {
+  background: rgba(196,95,10,0.18);
+  box-shadow: 0 0 0 1.5px rgba(196,95,10,0.45);
+}
+
+.rot-handle {
+  position: absolute;
+  width: 46px; height: 46px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid #111;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+  display: none; /* only when piece is selected */
+  align-items: center; justify-content: center;
+  touch-action: none;
+  cursor: pointer;
+  z-index: 6000;
+  left: 50%;
+  top: -54px;
+  margin-left: -23px;
+  padding: 0;
+  appearance: none; -webkit-appearance: none;
+  font: inherit;
+  color: inherit;
+  min-width: 46px; min-height: 46px;
+}
+.piece.selected .rot-handle { display: flex; }
+.rot-handle:active { background: var(--accent-soft); transform: scale(0.96); }
+.rot-handle svg { width: 28px; height: 28px; pointer-events: none; }
+
+.sw-handle {
+  position: absolute;
+  min-width: 52px; height: 40px;
+  border-radius: 20px;
+  background: #fff;
+  border: 2px solid #111;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+  display: none; /* only when switch is selected */
+  align-items: center; justify-content: center;
+  touch-action: none;
+  cursor: pointer;
+  z-index: 6000;
+  left: 50%;
+  bottom: -50px;
+  margin-left: -26px;
+  padding: 0 10px;
+  appearance: none; -webkit-appearance: none;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #111;
+  line-height: 1;
+}
+.piece.selected .sw-handle { display: flex; }
+.sw-handle.is-on {
+  background: #e8f7ea;
+  border-color: var(--green-dark);
+  color: var(--green-dark);
+}
+.sw-handle.is-off {
+  background: #f5f5f5;
+  border-color: #666;
+  color: #444;
+}
+.sw-handle:active { transform: scale(0.96); background: var(--accent-soft); }
+
+.ghost {
+  position: fixed;
+  pointer-events: none;
+  z-index: 8000;
+  opacity: 0.88;
+  left: 0; top: 0;
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  background: rgba(28, 28, 28, 0.45);
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.modal.open { display: flex; }
+.modal-card {
+  background: var(--panel);
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  padding: 18px 16px 14px;
+  width: min(340px, 100%);
+  box-shadow: 0 10px 28px rgba(0,0,0,0.22);
+}
+.modal-card h3 {
+  margin: 0 0 6px;
+  font-size: 1.05rem;
+}
+.modal-card p {
+  margin: 0 0 12px;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+.modal-card input {
+  width: 100%;
+  font-family: inherit;
+  font-size: 1.15rem;
+  letter-spacing: 0.2em;
+  text-align: center;
+  padding: 12px 10px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 8px;
+  min-height: var(--hit);
+}
+.modal-card input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(196,95,10,0.18);
+}
+.modal-err {
+  color: var(--danger) !important;
+  font-size: 0.82rem !important;
+  min-height: 1.2em;
+}
+.modal-err[hidden] { display: none !important; }
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>技能教室 8.1　砌電路</h1>
+  <p>自由拖拉導片、燈泡、開關、電池（一格長）· 扣上金屬柱 · 閉合就亮燈</p>
+  <span class="tip">套裝：長按拖出 · 畫布自由擺位 · 點選後橫／直轉 · 開關旁開／關 · 一格長吸附</span>
+</header>
+
+<div class="toolbar">
+  <button type="button" id="btn-schem-hint">顯示電路圖提示</button>
+  <button type="button" id="btn-schematic">顯示電路圖</button>
+  <button type="button" id="btn-reset" class="danger" title="清空">清空底板</button>
+  <span class="spacer"></span>
+  <span id="status" style="font-size:0.8rem;color:var(--muted);"></span>
+</div>
+
+<div class="main">
+  <aside class="palette" id="palette-aside" aria-label="元件套裝">
+    <h2>元件套裝<br/>長按拖出 · 輕掃捲動</h2>
+    <div class="palette-list" id="palette"></div>
+  </aside>
+  <div class="workspace">
+    <div class="canvas-label">
+      <span>底板 5×5 — 自由拖放組裝</span>
+      <span>點選後橫／直轉 · 開關旁開／關 · 點電池調極性</span>
+    </div>
+    <div class="canvas-row">
+      <div class="canvas empty" id="canvas" role="application" aria-label="電路底板">
+        <div class="posts-layer" id="posts-layer"></div>
+      </div>
+      <div class="schematic-panel" id="schematicPanel" aria-hidden="true">
+        <h2>電路圖</h2>
+        <div id="schem-hint-box"></div>
+        <div class="schem-wrap" id="schemWrap">
+          <canvas id="schematic" width="280" height="360"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="selection-bar" id="sel-bar">
+      <span class="name" id="sel-name">—</span>
+      <button type="button" id="btn-rotate">橫／直轉</button>
+      <button type="button" id="btn-flip-bat" style="display:none;">調換極性</button>
+      <button type="button" id="btn-delete" class="danger">刪除</button>
+    </div>
+  </div>
+</div>
+
+<footer>技能教室 8.1 —— 先砌實體再對照符號｜離線／iPad｜Ms So</footer>
+
+<div id="hint-pw-modal" class="modal" aria-hidden="true">
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="hint-pw-title">
+    <h3 id="hint-pw-title">解鎖電路圖提示</h3>
+    <p>請輸入老師提供嘅密碼，先可以睇提示。</p>
+    <input id="hint-pw-input" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" autocomplete="off" enterkeyhint="done" placeholder="請輸入密碼" />
+    <p id="hint-pw-err" class="modal-err" hidden>密碼不正確，請再試。</p>
+    <div class="modal-actions">
+      <button type="button" id="hint-pw-cancel">取消</button>
+      <button type="button" id="hint-pw-ok" class="primary">確定</button>
+    </div>
+  </div>
+</div>
+
+<div id="clear-modal" class="modal" aria-hidden="true">
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="clear-title">
+    <h3 id="clear-title">清空底板？</h3>
+    <p>會移除底板上所有元件。</p>
+    <div class="modal-actions">
+      <button type="button" id="clear-cancel">取消</button>
+      <button type="button" id="clear-ok" class="danger">確定清空</button>
+    </div>
+  </div>
+</div>
+
+<div id="schem-ask-modal" class="modal" aria-hidden="true">
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="schem-ask-title">
+    <h3 id="schem-ask-title">你是否已繪畫電路圖？</h3>
+    <p>請先在紙上畫好，再顯示以核對。</p>
+    <div class="modal-actions">
+      <button type="button" id="schem-ask-no">尚未繪出</button>
+      <button type="button" id="schem-ask-yes" class="primary">已繪出</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+'use strict';
+
+const COLS = 5;
+const ROWS = 5;
+const HINT_PASSWORD = '1111';
+const SNAP_PX = 28;
+const LONG_PRESS_MS = 320;
+const MOVE_CANCEL_PX = 10;
+const CROSS_DRAG_PX = 18;
+
+/** Snap orientation to only 0° (horizontal) or 90° (vertical). */
+function normalizeRot(deg) {
+  const n = ((Math.round((Number(deg) || 0) / 90) * 90) % 360 + 360) % 360;
+  // Collapse 180→0 and 270→90 — only two directions allowed
+  if (n === 90 || n === 270) return 90;
+  return 0;
+}
+
+
+const ROT_ARROW = `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <path d="M 36.2 12.5 A 15.2 15.2 0 1 1 14.5 12.8" fill="none" stroke="#111" stroke-width="7" stroke-linecap="butt"/>
+  <polygon points="30,5 42.5,12.2 29.5,18.5" fill="#111"/>
+</svg>`;
+
+const SVGS = {
+  strip: `<svg viewBox="0 0 120 28" xmlns="http://www.w3.org/2000/svg" width="120" height="28">
+  <defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f4f6f8"/><stop offset="45%" stop-color="#d8dde3"/><stop offset="100%" stop-color="#aeb6bf"/></linearGradient></defs>
+  <rect x="2" y="7" width="116" height="14" rx="7" fill="url(#sg)" stroke="#7a828c" stroke-width="1.4"/>
+  <circle cx="12" cy="14" r="5.2" fill="#f7f8fa" stroke="#6a727c" stroke-width="1.3"/>
+  <circle cx="108" cy="14" r="5.2" fill="#f7f8fa" stroke="#6a727c" stroke-width="1.3"/>
+  <circle cx="12" cy="14" r="2.6" fill="none" stroke="#5a626c" stroke-width="1.5"/>
+  <circle cx="108" cy="14" r="2.6" fill="none" stroke="#5a626c" stroke-width="1.5"/>
+</svg>`,
+  bulb: `<svg viewBox="0 0 100 72" xmlns="http://www.w3.org/2000/svg" width="100" height="72">
+  <defs>
+    <linearGradient id="mt" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f0f2f5"/><stop offset="100%" stop-color="#9aa3ad"/></linearGradient>
+    <radialGradient id="bg" cx="40%" cy="35%" r="60%"><stop offset="0%" stop-color="rgba(255,255,255,0.7)"/><stop offset="100%" stop-color="rgba(200,210,220,0.5)"/></radialGradient>
+  </defs>
+  <rect x="4" y="38" width="28" height="12" rx="2" fill="url(#mt)" stroke="#6a727c" stroke-width="1.2"/>
+  <rect x="68" y="38" width="28" height="12" rx="2" fill="url(#mt)" stroke="#6a727c" stroke-width="1.2"/>
+  <ellipse cx="14" cy="44" rx="5" ry="3.2" fill="#e8ecef" stroke="#5a626c" stroke-width="1.1"/>
+  <ellipse cx="86" cy="44" rx="5" ry="3.2" fill="#e8ecef" stroke="#5a626c" stroke-width="1.1"/>
+  <rect x="30" y="34" width="40" height="22" rx="3" fill="#3d9a4a" stroke="#2a6e32" stroke-width="1.5"/>
+  <rect x="42" y="30" width="16" height="8" rx="1.5" fill="#c5cad0" stroke="#6a727c" stroke-width="1"/>
+  <circle class="bulb-glass" cx="50" cy="18" r="14" fill="url(#bg)" stroke="#8895a5" stroke-width="1.4"/>
+  <path class="filament" d="M45 18 Q50 24 55 18" fill="none" stroke="#9aa0a8" stroke-width="1.4"/>
+</svg>`,
+  switch: `<svg viewBox="0 0 100 56" xmlns="http://www.w3.org/2000/svg" width="100" height="56">
+  <defs><linearGradient id="mt2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f0f2f5"/><stop offset="100%" stop-color="#9aa3ad"/></linearGradient></defs>
+  <rect x="4" y="22" width="28" height="12" rx="2" fill="url(#mt2)" stroke="#6a727c" stroke-width="1.2"/>
+  <rect x="68" y="22" width="28" height="12" rx="2" fill="url(#mt2)" stroke="#6a727c" stroke-width="1.2"/>
+  <ellipse cx="14" cy="28" rx="5" ry="3.2" fill="#e8ecef" stroke="#5a626c" stroke-width="1.1"/>
+  <ellipse cx="86" cy="28" rx="5" ry="3.2" fill="#e8ecef" stroke="#5a626c" stroke-width="1.1"/>
+  <rect x="30" y="18" width="40" height="22" rx="3" fill="#3d9a4a" stroke="#2a6e32" stroke-width="1.5"/>
+  <circle cx="40" cy="29" r="3" fill="#888"/>
+  <line class="lever" x1="40" y1="29" x2="62" y2="18" stroke="#b0b6bc" stroke-width="3.5" stroke-linecap="round"/>
+  <rect class="lever-knob" x="56" y="10" width="14" height="10" rx="2" fill="#1a1a1a" stroke="#000" stroke-width="0.8"/>
+</svg>`,
+  battery: `<svg viewBox="0 0 110 44" xmlns="http://www.w3.org/2000/svg" width="110" height="44">
+  <defs>
+    <linearGradient id="cu" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f0b060"/><stop offset="50%" stop-color="#d47820"/><stop offset="100%" stop-color="#a85810"/></linearGradient>
+    <linearGradient id="sv" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#eef1f4"/><stop offset="100%" stop-color="#9aa3ad"/></linearGradient>
+    <linearGradient id="gn" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#3a6b3a"/><stop offset="50%" stop-color="#1e4a22"/><stop offset="100%" stop-color="#143318"/></linearGradient>
+  </defs>
+  <rect x="8" y="6" width="94" height="32" rx="10" fill="url(#gn)" stroke="#0d2010" stroke-width="1.2"/>
+  <rect x="8" y="6" width="28" height="32" rx="10" fill="url(#cu)" stroke="#8a4810" stroke-width="0.8"/>
+  <rect x="30" y="6" width="10" height="32" fill="url(#sv)" stroke="#7a828c" stroke-width="0.6"/>
+  <ellipse cx="8" cy="22" rx="3.5" ry="10" fill="#c0c4c8" stroke="#707880" stroke-width="1"/>
+  <circle cx="8" cy="22" r="2.2" fill="#e8ecf0"/>
+  <text x="20" y="26" text-anchor="middle" font-size="13" font-weight="700" fill="#fff" font-family="sans-serif">+</text>
+  <text x="78" y="26" text-anchor="middle" font-size="13" font-weight="700" fill="#fff" font-family="sans-serif">−</text>
+</svg>`
+};
+
+const INSTRUMENTS = [
+  { id: 'strip', name: '導片', qty: 40, w: 120, h: 28, svg: SVGS.strip },
+  { id: 'bulb', name: '燈泡', qty: 20, w: 100, h: 72, svg: SVGS.bulb },
+  { id: 'switch', name: '開關', qty: 12, w: 100, h: 56, svg: SVGS.switch },
+  { id: 'battery', name: '電池', qty: 12, w: 110, h: 44, svg: SVGS.battery }
+];
+
+const state = {
+  pieces: [],
+  selected: null,
+  nextZ: 1,
+  drag: null,
+  showSchematic: false,
+  showSchemHint: false,
+  hintUnlocked: false,
+  posts: [],
+  boardW: 600,
+  boardH: 420,
+  pitch: 80
+};
+
+const canvas = document.getElementById('canvas');
+const postsLayer = document.getElementById('posts-layer');
+const paletteEl = document.getElementById('palette');
+const selBar = document.getElementById('sel-bar');
+const selName = document.getElementById('sel-name');
+const statusEl = document.getElementById('status');
+const schemCanvas = document.getElementById('schematic');
+const schemCtx = schemCanvas.getContext('2d');
+const schematicPanel = document.getElementById('schematicPanel');
+const schemWrap = document.getElementById('schemWrap');
+const btnSchematic = document.getElementById('btn-schematic');
+const btnSchemHint = document.getElementById('btn-schem-hint');
+const btnFlipBat = document.getElementById('btn-flip-bat');
+let dpr = 1;
+let schemDpr = 1;
+let litBulbs = new Set();
+
+function uid() { return 'p' + Math.random().toString(36).slice(2, 9); }
+function findInst(type) { return INSTRUMENTS.find(i => i.id === type); }
+function usedCount(type) { return state.pieces.filter(p => p.type === type).length; }
+function getPiece(id) { return state.pieces.find(p => p.uid === id); }
+function getPost(id) { return state.posts.find(p => p.id === id); }
+function postId(c, r) { return c + ',' + r; }
+
+function isPortraitRow() {
+  return window.matchMedia('(max-width: 1100px) and (orientation: portrait), (max-width: 820px)').matches;
+}
+
+function displayScale() {
+  const w = Math.min(window.innerWidth || 800, document.documentElement.clientWidth || 800);
+  if (w <= 420) return 0.72;
+  if (w <= 700) return 0.85;
+  return 1;
+}
+
+/** Fixed geometry: terminal span == pitch (one grid cell). No user length adjust. */
+function geomFor(type) {
+  const pitch = state.pitch || 80;
+  if (type === 'strip') {
+    const pad = Math.max(8, Math.round(pitch * 0.12));
+    return { w: pitch + 2 * pad, h: Math.max(22, Math.round(pitch * 0.28)), pad, termY: null };
+  }
+  if (type === 'bulb') {
+    const extra = Math.max(20, Math.round(pitch * 0.26));
+    const w = pitch + extra;
+    const h = Math.round(pitch * 1.05); // headroom for lit-bulb rays
+    return { w, h, pad: extra / 2, termY: Math.round(h * 0.72) };
+  }
+  if (type === 'switch') {
+    const extra = Math.max(20, Math.round(pitch * 0.26));
+    const w = pitch + extra;
+    const h = Math.round(pitch * 0.72);
+    return { w, h, pad: extra / 2, termY: Math.round(h * 0.55) };
+  }
+  if (type === 'battery') {
+    const extra = Math.max(16, Math.round(pitch * 0.2));
+    const w = pitch + extra;
+    const h = Math.round(pitch * 0.55);
+    return { w, h, pad: extra / 2, termY: Math.round(h / 2) };
+  }
+  return { w: pitch, h: Math.round(pitch * 0.35), pad: 0, termY: null };
+}
+
+function instSize(instOrType) {
+  const type = typeof instOrType === 'string' ? instOrType : instOrType.id;
+  const g = geomFor(type);
+  return { w: g.w, h: g.h };
+}
+
+function ptrXY(e) {
+  if (e.touches && e.touches.length) return { x: e.touches[0].clientX, y: e.touches[0].clientY, id: e.touches[0].identifier };
+  if (e.changedTouches && e.changedTouches.length) return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY, id: e.changedTouches[0].identifier };
+  return { x: e.clientX, y: e.clientY, id: e.pointerId };
+}
+
+function clientToCanvas(cx, cy) {
+  const r = canvas.getBoundingClientRect();
+  return { x: cx - r.left + canvas.scrollLeft, y: cy - r.top + canvas.scrollTop };
+}
+
+function isHardDrag() {
+  const m = state.drag && state.drag.mode;
+  return m === 'palette' || m === 'piece';
+}
+
+let _tmGuardOn = false;
+function setDragLock(on) {
+  document.body.classList.toggle('drag-lock', !!on);
+  if (on) {
+    if (!_tmGuardOn) {
+      document.addEventListener('touchmove', touchMoveGuard, { passive: false, capture: true });
+      _tmGuardOn = true;
+    }
+  } else if (_tmGuardOn) {
+    document.removeEventListener('touchmove', touchMoveGuard, { capture: true });
+    _tmGuardOn = false;
+  }
+}
+function touchMoveGuard(e) {
+  if (isHardDrag() && e.cancelable) e.preventDefault();
+}
+
+function setStatus(t) { statusEl.textContent = t || ''; }
+
+function layoutPosts() {
+  const margin = 40;
+  const w = Math.max(canvas.clientWidth, 320);
+  const h = Math.max(canvas.clientHeight, 280);
+  state.boardW = w;
+  state.boardH = h;
+  const usableW = w - margin * 2;
+  const usableH = h - margin * 2;
+  // Equal pitch so one cell = component length
+  const pitch = Math.min(usableW / (COLS - 1), usableH / (ROWS - 1));
+  state.pitch = pitch;
+  const gridW = pitch * (COLS - 1);
+  const gridH = pitch * (ROWS - 1);
+  const originX = (w - gridW) / 2;
+  const originY = (h - gridH) / 2;
+  state.posts = [];
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const x = originX + c * pitch;
+      const y = originY + r * pitch;
+      state.posts.push({ id: postId(c, r), col: c, row: r, x, y });
+    }
+  }
+  // Snap radius ~ 40% of cell
+  // (SNAP_PX kept as base; effective snap uses pitch below)
+  renderPosts();
+}
+
+function renderPosts() {
+  postsLayer.style.width = state.boardW + 'px';
+  postsLayer.style.height = state.boardH + 'px';
+  postsLayer.innerHTML = state.posts.map(p =>
+    `<div class="post-dot" style="left:${p.x}px;top:${p.y}px" data-id="${p.id}">
+      <svg viewBox="0 0 18 22" xmlns="http://www.w3.org/2000/svg">
+        <line x1="9" y1="14" x2="9" y2="20" stroke="#9aa0a6" stroke-width="3"/>
+        <circle cx="9" cy="8" r="7" fill="#c5cad0" stroke="#6a7078" stroke-width="1.2"/>
+        <circle cx="7.5" cy="6.5" r="2.2" fill="#f0f2f4" opacity="0.8"/>
+      </svg>
+    </div>`
+  ).join('');
+}
+
+function nearestPost(x, y, excludeIds) {
+  return nearestPostR(x, y, excludeIds, snapRadius());
+}
+
+function nearestPostAny(x, y, excludeIds) {
+  excludeIds = excludeIds || [];
+  let best = null, bestD = Infinity;
+  for (const p of state.posts) {
+    if (excludeIds.includes(p.id)) continue;
+    const d = (p.x - x) ** 2 + (p.y - y) ** 2;
+    if (d < bestD) { bestD = d; best = p; }
+  }
+  return best;
+}
+
+function terminalOffsets(type, w, h) {
+  // local coords; distance between terminals == pitch
+  const g = geomFor(type);
+  const pad = g.pad;
+  const ty = g.termY != null ? g.termY : h / 2;
+  return [{ x: pad, y: ty }, { x: pad + (state.pitch || (w - 2 * pad)), y: ty }];
+}
+
+function areAdjacentPosts(pa, pb) {
+  if (!pa || !pb) return false;
+  const dc = Math.abs(pa.col - pb.col);
+  const dr = Math.abs(pa.row - pb.row);
+  return (dc === 1 && dr === 0) || (dc === 0 && dr === 1);
+}
+
+function snapRadius() {
+  return Math.max(SNAP_PX, (state.pitch || 80) * 0.42);
+}
+
+function worldTerminals(p) {
+  const sz = instSize(p.type);
+  const offs = terminalOffsets(p.type, sz.w, sz.h);
+  const cx = p.x + sz.w / 2;
+  const cy = p.y + sz.h / 2;
+  const rad = (p.rot || 0) * Math.PI / 180;
+  const cos = Math.cos(rad), sin = Math.sin(rad);
+  return offs.map(o => {
+    const lx = o.x - sz.w / 2;
+    const ly = o.y - sz.h / 2;
+    return {
+      x: cx + lx * cos - ly * sin,
+      y: cy + lx * sin + ly * cos
+    };
+  });
+}
+
+function nearestPostR(x, y, excludeIds, radius) {
+  excludeIds = excludeIds || [];
+  radius = radius != null ? radius : snapRadius();
+  let best = null, bestD = Infinity;
+  for (const p of state.posts) {
+    if (excludeIds.includes(p.id)) continue;
+    const d = (p.x - x) ** 2 + (p.y - y) ** 2;
+    if (d < bestD) { bestD = d; best = p; }
+  }
+  return best && Math.sqrt(bestD) <= radius ? best : null;
+}
+
+function applySnapFromPosition(p) {
+  const terms = worldTerminals(p);
+  const r = snapRadius();
+  let pa = nearestPostR(terms[0].x, terms[0].y, [], r);
+  let pb = nearestPostR(terms[1].x, terms[1].y, pa ? [pa.id] : [], r);
+  // Only snap onto ortho-adjacent posts (one cell) — fixed length, no stretch
+  if (pa && pb && areAdjacentPosts(pa, pb)) {
+    p.a = pa.id;
+    p.b = pb.id;
+    alignPieceToPosts(p);
+    return;
+  }
+  // Try: piece center near an edge midpoint of any adjacent pair matching orientation
+  const sz = instSize(p.type);
+  const cx = p.x + sz.w / 2;
+  const cy = p.y + sz.h / 2;
+  const r0 = normalizeRot(p.rot);
+  const wantHoriz = (r0 === 0);
+  let best = null, bestScore = Infinity;
+  for (const a of state.posts) {
+    for (const b of state.posts) {
+      if (a.id >= b.id) continue;
+      if (!areAdjacentPosts(a, b)) continue;
+      const isH = a.row === b.row;
+      if (wantHoriz !== isH) continue;
+      const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+      const score = (mx - cx) ** 2 + (my - cy) ** 2;
+      if (score < bestScore) { bestScore = score; best = [a, b]; }
+    }
+  }
+  if (best && Math.sqrt(bestScore) <= snapRadius() * 1.15) {
+    // orient a→b along current terminal direction
+    const tdx = terms[1].x - terms[0].x;
+    const tdy = terms[1].y - terms[0].y;
+    let a = best[0], b = best[1];
+    const pdx = b.x - a.x, pdy = b.y - a.y;
+    if (tdx * pdx + tdy * pdy < 0) { const t = a; a = b; b = t; }
+    p.a = a.id; p.b = b.id;
+    alignPieceToPosts(p);
+    return;
+  }
+  p.a = null;
+  p.b = null;
+}
+
+function alignPieceToPosts(p) {
+  let pa = getPost(p.a), pb = getPost(p.b);
+  if (!pa || !pb) return;
+  if (!areAdjacentPosts(pa, pb)) {
+    // refuse non-adjacent — fixed one-cell length only
+    p.a = null; p.b = null;
+    return;
+  }
+  const isH = pa.row === pb.row;
+  // Only two directions: horizontal 0° or vertical 90°
+  p.rot = isH ? 0 : 90;
+  // Canonicalize a→b to match terminal 0→1 under that rotation
+  // rot 0: term0 left / term1 right → a has smaller col
+  // rot 90 (CW): term0 up / term1 down → a has smaller row
+  if ((isH && pa.col > pb.col) || (!isH && pa.row > pb.row)) {
+    const tid = p.a; p.a = p.b; p.b = tid;
+    pa = getPost(p.a); pb = getPost(p.b);
+  }
+  const sz = instSize(p.type);
+  const mx = (pa.x + pb.x) / 2;
+  const my = (pa.y + pb.y) / 2;
+  const ang = p.rot;
+  const offs = terminalOffsets(p.type, sz.w, sz.h);
+  const midLocalX = (offs[0].x + offs[1].x) / 2;
+  const midLocalY = (offs[0].y + offs[1].y) / 2;
+  const lx = midLocalX - sz.w / 2;
+  const ly = midLocalY - sz.h / 2;
+  const rad = ang * Math.PI / 180;
+  const rx = lx * Math.cos(rad) - ly * Math.sin(rad);
+  const ry = lx * Math.sin(rad) + ly * Math.cos(rad);
+  p.x = mx - rx - sz.w / 2;
+  p.y = my - ry - sz.h / 2;
+}
+
+function conductingEdges(excludeUid, opts) {
+  opts = opts || {};
+  const skipBatteries = !!opts.skipBatteries;
+  const edges = [];
+  for (const c of state.pieces) {
+    if (c.uid === excludeUid) continue;
+    if (!c.a || !c.b || c.a === c.b) continue;
+    if (c.type === 'switch' && !c.closed) continue;
+    if (skipBatteries && c.type === 'battery') continue;
+    const pa = getPost(c.a), pb = getPost(c.b);
+    // Only count a true snap: both ends on existing ortho-adjacent posts
+    if (!pa || !pb || !areAdjacentPosts(pa, pb)) continue;
+    edges.push({ a: c.a, b: c.b, comp: c });
+  }
+  return edges;
+}
+
+function neighbors(edges) {
+  const map = {};
+  for (const e of edges) {
+    if (!map[e.a]) map[e.a] = [];
+    if (!map[e.b]) map[e.b] = [];
+    map[e.a].push(e);
+    map[e.b].push(e);
+  }
+  return map;
+}
+
+function canReachPost(start, goal, adj) {
+  if (!start || !goal) return false;
+  if (start === goal) return true;
+  const seen = new Set([start]);
+  const q = [start];
+  while (q.length) {
+    const node = q.shift();
+    for (const e of (adj[node] || [])) {
+      const next = e.a === node ? e.b : e.a;
+      if (seen.has(next)) continue;
+      if (next === goal) return true;
+      seen.add(next);
+      q.push(next);
+    }
+  }
+  return false;
+}
+
+/** Re-check piece still truly snapped (both terminals on assigned adjacent posts). */
+function validatePieceConnection(p) {
+  if (!p.a || !p.b || p.a === p.b) {
+    p.a = null; p.b = null;
+    return false;
+  }
+  const pa = getPost(p.a), pb = getPost(p.b);
+  if (!pa || !pb || !areAdjacentPosts(pa, pb)) {
+    p.a = null; p.b = null;
+    return false;
+  }
+  const terms = worldTerminals(p);
+  const r = snapRadius() * 0.9;
+  const d = (t, post) => Math.hypot(t.x - post.x, t.y - post.y);
+  const ok =
+    (d(terms[0], pa) <= r && d(terms[1], pb) <= r) ||
+    (d(terms[0], pb) <= r && d(terms[1], pa) <= r);
+  if (!ok) {
+    p.a = null; p.b = null;
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Bulb lights only with a true closed loop:
+ * battery +  ↔ conductors/bulbs/closed switches ↔ battery −
+ * and this bulb bridges the two sides (current through it).
+ * Connection counts only when both ends snap onto the same metal posts.
+ */
+function isBulbLit(bulb) {
+  if (!validatePieceConnection(bulb)) return false;
+
+  const batteries = [];
+  for (const c of state.pieces) {
+    if (c.type !== 'battery') continue;
+    if (!validatePieceConnection(c)) continue;
+    batteries.push(c);
+  }
+  if (!batteries.length) return false;
+
+  // Conductors only (no batteries): strips, other bulbs, closed switches
+  const edges = conductingEdges(bulb.uid, { skipBatteries: true });
+  // Drop any edge whose piece failed validation
+  const clean = [];
+  for (const e of edges) {
+    if (!e.comp.a || !e.comp.b) continue;
+    const pa = getPost(e.comp.a), pb = getPost(e.comp.b);
+    if (!pa || !pb || !areAdjacentPosts(pa, pb)) continue;
+    clean.push(e);
+  }
+  const adj = neighbors(clean);
+
+  for (const bat of batteries) {
+    // Path from each bulb end to battery terminals via conductors only
+    const aToA = canReachPost(bulb.a, bat.a, adj);
+    const aToB = canReachPost(bulb.a, bat.b, adj);
+    const bToA = canReachPost(bulb.b, bat.a, adj);
+    const bToB = canReachPost(bulb.b, bat.b, adj);
+    // Must connect opposite battery poles (＋ side ↔ － side through this bulb)
+    if ((aToA && bToB) || (aToB && bToA)) return true;
+  }
+  return false;
+}
+
+function updateCircuit() {
+  // Validate snaps first so stale / loose connections cannot light a bulb
+  for (const c of state.pieces) validatePieceConnection(c);
+
+  litBulbs.clear();
+  for (const c of state.pieces) {
+    if (c.type === 'bulb' && isBulbLit(c)) litBulbs.add(c.uid);
+  }
+  const nLit = litBulbs.size;
+  if (state.pieces.some(c => c.type === 'bulb')) {
+    setStatus(nLit ? `有 ${nLit} 盞燈亮緊——回路已閉合` : '燈泡未亮：檢查連接、開關是否合上');
+  }
+  updateBulbVisuals();
+  if (state.showSchematic) drawSchematic();
+  if (state.showSchemHint) renderHintBox();
+}
+
+function updateBulbVisuals() {
+  state.pieces.forEach(p => {
+    if (p.type !== 'bulb') return;
+    const el = canvas.querySelector('.piece[data-uid="' + p.uid + '"]');
+    if (!el) return;
+    const lit = litBulbs.has(p.uid);
+    el.classList.toggle('bulb-is-lit', lit);
+    const dim = el.querySelector('.bulb-dim');
+    const glow = el.querySelector('.bulb-glow');
+    if (dim) dim.style.display = lit ? 'none' : '';
+    if (glow) glow.style.display = lit ? '' : 'none';
+  });
+}
+
+function updateSwitchVisual(p, el) {
+  const lever = el.querySelector('.lever');
+  const knob = el.querySelector('.lever-knob');
+  if (!lever || !knob) return;
+  const g = geomFor('switch');
+  const w = g.w, h = g.h, pad = g.pad, pitch = state.pitch || 80, ty = g.termY;
+  const boardW = Math.max(28, Math.round(pitch * 0.42));
+  const boardX = (w - boardW) / 2;
+  const boardH = Math.max(18, Math.round(h * 0.42));
+  const boardY = ty - boardH / 2;
+  const pivotX = boardX + boardW * 0.28;
+  const pivotY = ty;
+  const handleW = Math.max(10, Math.round(boardW * 0.28));
+  const handleH = Math.max(8, Math.round(h * 0.16));
+  let tipX, tipY;
+  if (p.closed) {
+    tipX = boardX + boardW * 0.82;
+    tipY = ty;
+  } else {
+    tipX = boardX + boardW * 0.62;
+    tipY = Math.max(6, boardY - boardH * 0.15);
+  }
+  lever.setAttribute('x1', String(pivotX));
+  lever.setAttribute('y1', String(pivotY));
+  lever.setAttribute('x2', String(tipX));
+  lever.setAttribute('y2', String(tipY));
+  knob.setAttribute('x', String(tipX - handleW / 2));
+  knob.setAttribute('y', String(tipY - handleH / 2));
+  knob.setAttribute('width', String(handleW));
+  knob.setAttribute('height', String(handleH));
+}
+
+function renderPalette() {
+  paletteEl.innerHTML = '';
+  INSTRUMENTS.forEach(inst => {
+    const left = inst.qty - usedCount(inst.id);
+    const div = document.createElement('div');
+    div.className = 'palette-item' + (left <= 0 ? ' used' : '');
+    div.dataset.type = inst.id;
+    div.innerHTML = `<div class="thumb">${inst.svg}</div><div class="label">${inst.name}</div><div class="hint">可拖出</div>`;
+    if (left > 0) div.addEventListener('pointerdown', onPaletteDown);
+    paletteEl.appendChild(div);
+  });
+}
+
+function updateEmpty() {
+  canvas.classList.toggle('empty', state.pieces.length === 0);
+}
+
+function updateSelBar() {
+  const p = getPiece(state.selected);
+  if (!p) {
+    selBar.classList.remove('show');
+    return;
+  }
+  selBar.classList.add('show');
+  const inst = findInst(p.type);
+  let label = inst ? inst.name : p.type;
+  if (p.type === 'switch') label += p.closed ? '（合）' : '（開）';
+  if (p.type === 'battery') label += '（點選可調極性）';
+  selName.textContent = label;
+  btnFlipBat.style.display = p.type === 'battery' ? '' : 'none';
+}
+
+function buildPieceSvg(p) {
+  const g = geomFor(p.type);
+  const w = g.w, h = g.h, pad = g.pad;
+  const pitch = state.pitch || (w - 2 * pad);
+  const uid = p.uid;
+  if (p.type === 'strip') {
+    const cy = h / 2;
+    const barH = Math.max(11, Math.round(h * 0.48));
+    const rOuter = Math.max(5.5, Math.round(Math.min(pad, h) * 0.58));
+    const rHole = Math.max(2.4, rOuter * 0.48);
+    return `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">
+  <defs><linearGradient id="sg${uid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f5f7f9"/><stop offset="40%" stop-color="#d5dae0"/><stop offset="100%" stop-color="#a8b0b8"/></linearGradient></defs>
+  <rect x="1.5" y="${(h - barH) / 2}" width="${w - 3}" height="${barH}" rx="${barH / 2}" fill="url(#sg${uid})" stroke="#6a727c" stroke-width="1.4"/>
+  <circle cx="${pad}" cy="${cy}" r="${rOuter}" fill="#eef1f4" stroke="#5a626c" stroke-width="1.3"/>
+  <circle cx="${pad + pitch}" cy="${cy}" r="${rOuter}" fill="#eef1f4" stroke="#5a626c" stroke-width="1.3"/>
+  <circle cx="${pad}" cy="${cy}" r="${rHole}" fill="none" stroke="#4a525c" stroke-width="1.6"/>
+  <circle cx="${pad + pitch}" cy="${cy}" r="${rHole}" fill="none" stroke="#4a525c" stroke-width="1.6"/>
+</svg>`;
+  }
+  if (p.type === 'bulb') {
+    const ty = g.termY;
+    const plateH = Math.max(10, Math.round(h * 0.18));
+    const plateY = ty - plateH / 2;
+    const boardW = Math.max(28, Math.round(pitch * 0.42));
+    const boardX = (w - boardW) / 2;
+    const boardH = Math.max(18, Math.round(h * 0.32));
+    const boardY = ty - boardH / 2;
+    const glassR = Math.max(11, Math.round(h * 0.22));
+    const glassCy = Math.max(glassR + Math.round(glassR * 0.55) + 4, boardY - glassR + 2);
+    const sockW = Math.max(12, Math.round(boardW * 0.42));
+    const sockH = Math.max(6, Math.round(h * 0.1));
+    const ovalRx = Math.max(4, Math.round(pad * 0.42));
+    const ovalRy = Math.max(2.8, plateH * 0.32);
+    const cx = w / 2;
+    // Cartoon lit bulb (crystal yellow + rays + blue-grey screw base)
+    const litR = glassR + 1;
+    const baseTop = glassCy + litR * 0.72;
+    const baseH = Math.max(7, Math.round(litR * 0.55));
+    const baseW = Math.max(8, Math.round(litR * 0.7));
+    const rayLen = Math.max(4, Math.round(litR * 0.38));
+    const rayPts = [];
+    for (let i = 0; i < 9; i++) {
+      // Upper halo only (SVG y-down: -π → 0 = left, top, right)
+      const ang = -Math.PI + (i / 8) * Math.PI;
+      const x1 = cx + Math.cos(ang) * (litR + 2.2);
+      const y1 = glassCy + Math.sin(ang) * (litR + 2.2);
+      const x2 = cx + Math.cos(ang) * (litR + 2.2 + rayLen);
+      const y2 = glassCy + Math.sin(ang) * (litR + 2.2 + rayLen);
+      rayPts.push(`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#F5C518" stroke-width="2.8" stroke-linecap="round"/>`);
+    }
+    // Double-loop filament (rounded W / two ear loops)
+    const fil = `M${(cx - litR * 0.28).toFixed(1)} ${(baseTop - 1).toFixed(1)} V${(glassCy - litR * 0.05).toFixed(1)} C${(cx - litR * 0.28).toFixed(1)} ${(glassCy - litR * 0.42).toFixed(1)} ${(cx - litR * 0.02).toFixed(1)} ${(glassCy - litR * 0.42).toFixed(1)} ${(cx - litR * 0.02).toFixed(1)} ${(glassCy - litR * 0.08).toFixed(1)} C${(cx + litR * 0.02).toFixed(1)} ${(glassCy - litR * 0.42).toFixed(1)} ${(cx + litR * 0.28).toFixed(1)} ${(glassCy - litR * 0.42).toFixed(1)} ${(cx + litR * 0.28).toFixed(1)} ${(glassCy - litR * 0.05).toFixed(1)} V${(baseTop - 1).toFixed(1)}`;
+    return `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">
+  <defs>
+    <linearGradient id="mt${uid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f2f4f7"/><stop offset="100%" stop-color="#9aa3ad"/></linearGradient>
+    <radialGradient id="bg${uid}" cx="38%" cy="32%" r="65%"><stop offset="0%" stop-color="rgba(255,255,255,0.7)"/><stop offset="100%" stop-color="rgba(200,210,220,0.55)"/></radialGradient>
+    <radialGradient id="litg${uid}" cx="35%" cy="30%" r="70%"><stop offset="0%" stop-color="#FFE566"/><stop offset="55%" stop-color="#FFD633"/><stop offset="100%" stop-color="#F0B820"/></radialGradient>
+  </defs>
+  <rect x="2" y="${plateY}" width="${boardX - 2}" height="${plateH}" rx="2.5" fill="url(#mt${uid})" stroke="#6a727c" stroke-width="1.2"/>
+  <rect x="${boardX + boardW}" y="${plateY}" width="${w - boardX - boardW - 2}" height="${plateH}" rx="2.5" fill="url(#mt${uid})" stroke="#6a727c" stroke-width="1.2"/>
+  <ellipse cx="${pad}" cy="${ty}" rx="${ovalRx}" ry="${ovalRy}" fill="#e8ecef" stroke="#5a626c" stroke-width="1.1"/>
+  <ellipse cx="${pad + pitch}" cy="${ty}" rx="${ovalRx}" ry="${ovalRy}" fill="#e8ecef" stroke="#5a626c" stroke-width="1.1"/>
+  <rect x="${boardX}" y="${boardY}" width="${boardW}" height="${boardH}" rx="3" fill="#3d9a4a" stroke="#2a6e32" stroke-width="1.5"/>
+  <g class="bulb-dim">
+    <rect x="${(w - sockW) / 2}" y="${boardY - sockH + 2}" width="${sockW}" height="${sockH}" rx="1.5" fill="#c5cad0" stroke="#6a727c" stroke-width="1"/>
+    <circle class="bulb-glass" cx="${cx}" cy="${glassCy}" r="${glassR}" fill="url(#bg${uid})" stroke="#8895a5" stroke-width="1.4"/>
+    <path class="filament" d="M${cx - 5} ${glassCy} Q${cx} ${glassCy + 6} ${cx + 5} ${glassCy}" fill="none" stroke="#9aa0a8" stroke-width="1.4"/>
+  </g>
+  <g class="bulb-glow" style="display:none">
+    ${rayPts.join('\n    ')}
+    <circle class="bulb-glass" cx="${cx}" cy="${glassCy}" r="${litR}" fill="url(#litg${uid})" stroke="#E8C010" stroke-width="0.8"/>
+    <ellipse cx="${(cx - litR * 0.35).toFixed(1)}" cy="${(glassCy - litR * 0.35).toFixed(1)}" rx="${(litR * 0.28).toFixed(1)}" ry="${(litR * 0.16).toFixed(1)}" fill="#fff" opacity="0.85" transform="rotate(-35 ${(cx - litR * 0.35).toFixed(1)} ${(glassCy - litR * 0.35).toFixed(1)})"/>
+    <circle cx="${(cx + litR * 0.08).toFixed(1)}" cy="${(glassCy - litR * 0.5).toFixed(1)}" r="${Math.max(1.2, litR * 0.08).toFixed(1)}" fill="#fff" opacity="0.75"/>
+    <path class="filament" d="${fil}" fill="none" stroke="#E09420" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="${(cx - baseW / 2).toFixed(1)}" y="${baseTop.toFixed(1)}" width="${baseW}" height="${baseH}" rx="${Math.max(1.5, baseW * 0.15).toFixed(1)}" fill="#3A4A5C" stroke="#2A3545" stroke-width="0.7"/>
+    <line x1="${(cx - baseW * 0.38).toFixed(1)}" y1="${(baseTop + baseH * 0.28).toFixed(1)}" x2="${(cx + baseW * 0.38).toFixed(1)}" y2="${(baseTop + baseH * 0.28).toFixed(1)}" stroke="#2A3545" stroke-width="1"/>
+    <line x1="${(cx - baseW * 0.35).toFixed(1)}" y1="${(baseTop + baseH * 0.55).toFixed(1)}" x2="${(cx + baseW * 0.35).toFixed(1)}" y2="${(baseTop + baseH * 0.55).toFixed(1)}" stroke="#2A3545" stroke-width="1"/>
+    <line x1="${(cx - baseW * 0.3).toFixed(1)}" y1="${(baseTop + baseH * 0.78).toFixed(1)}" x2="${(cx + baseW * 0.3).toFixed(1)}" y2="${(baseTop + baseH * 0.78).toFixed(1)}" stroke="#2A3545" stroke-width="0.9"/>
+  </g>
+</svg>`;
+  }
+  if (p.type === 'switch') {
+    const ty = g.termY;
+    const plateH = Math.max(10, Math.round(h * 0.22));
+    const plateY = ty - plateH / 2;
+    const boardW = Math.max(28, Math.round(pitch * 0.42));
+    const boardX = (w - boardW) / 2;
+    const boardH = Math.max(18, Math.round(h * 0.42));
+    const boardY = ty - boardH / 2;
+    const ovalRx = Math.max(4, Math.round(pad * 0.42));
+    const ovalRy = Math.max(2.8, plateH * 0.32);
+    const pivotX = boardX + boardW * 0.28;
+    const pivotY = ty;
+    const closed = p.closed !== false;
+    const tipX = closed ? boardX + boardW * 0.82 : boardX + boardW * 0.62;
+    const tipY = closed ? ty : Math.max(6, boardY - boardH * 0.15);
+    const handleW = Math.max(10, Math.round(boardW * 0.28));
+    const handleH = Math.max(8, Math.round(h * 0.16));
+    return `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">
+  <defs><linearGradient id="mt${uid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f2f4f7"/><stop offset="100%" stop-color="#9aa3ad"/></linearGradient></defs>
+  <rect x="2" y="${plateY}" width="${boardX - 2}" height="${plateH}" rx="2.5" fill="url(#mt${uid})" stroke="#6a727c" stroke-width="1.2"/>
+  <rect x="${boardX + boardW}" y="${plateY}" width="${w - boardX - boardW - 2}" height="${plateH}" rx="2.5" fill="url(#mt${uid})" stroke="#6a727c" stroke-width="1.2"/>
+  <ellipse cx="${pad}" cy="${ty}" rx="${ovalRx}" ry="${ovalRy}" fill="#e8ecef" stroke="#5a626c" stroke-width="1.1"/>
+  <ellipse cx="${pad + pitch}" cy="${ty}" rx="${ovalRx}" ry="${ovalRy}" fill="#e8ecef" stroke="#5a626c" stroke-width="1.1"/>
+  <rect x="${boardX}" y="${boardY}" width="${boardW}" height="${boardH}" rx="3" fill="#3d9a4a" stroke="#2a6e32" stroke-width="1.5"/>
+  <circle cx="${pivotX}" cy="${pivotY}" r="3.2" fill="#8a9098" stroke="#555" stroke-width="0.8"/>
+  <line class="lever" x1="${pivotX}" y1="${pivotY}" x2="${tipX}" y2="${tipY}" stroke="#c0c6cc" stroke-width="3.6" stroke-linecap="round"/>
+  <rect class="lever-knob" x="${tipX - handleW / 2}" y="${tipY - handleH / 2}" width="${handleW}" height="${handleH}" rx="2" fill="#1a1a1a" stroke="#000" stroke-width="0.7"/>
+</svg>`;
+  }
+  if (p.type === 'battery') {
+    const ty = g.termY;
+    const bodyX = pad - 4;
+    const bodyW = pitch + 8;
+    const bodyY = h * 0.1;
+    const bodyH = h * 0.8;
+    const rx = Math.min(12, bodyH * 0.42);
+    const cuW = Math.max(14, bodyW * 0.28);
+    const bandW = Math.max(6, bodyW * 0.09);
+    const fs = Math.max(11, h * 0.32);
+    const flipped = !!p.flip;
+    // Default: copper/+ on left. Flipped: copper/+ on right (polarity without 180° rotate).
+    const cuX = flipped ? (bodyX + bodyW - cuW) : bodyX;
+    const bandX = flipped ? (cuX - bandW + 1) : (cuX + cuW - 1);
+    const capX = flipped ? (bodyX + bodyW) : bodyX;
+    const plusX = flipped ? (cuX + cuW * 0.45) : (cuX + cuW * 0.55);
+    const minusX = flipped ? (bodyX + bodyW * 0.28) : (bodyX + bodyW * 0.72);
+    return `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">
+  <defs>
+    <linearGradient id="cu${uid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f2b468"/><stop offset="45%" stop-color="#d47820"/><stop offset="100%" stop-color="#a05010"/></linearGradient>
+    <linearGradient id="sv${uid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f0f3f6"/><stop offset="100%" stop-color="#9aa3ad"/></linearGradient>
+    <linearGradient id="gn${uid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#3f7340"/><stop offset="50%" stop-color="#1f4d24"/><stop offset="100%" stop-color="#143318"/></linearGradient>
+  </defs>
+  <rect x="${bodyX}" y="${bodyY}" width="${bodyW}" height="${bodyH}" rx="${rx}" fill="url(#gn${uid})" stroke="#0d2010" stroke-width="1.2"/>
+  <rect x="${cuX}" y="${bodyY}" width="${cuW}" height="${bodyH}" rx="${rx}" fill="url(#cu${uid})" stroke="#8a4810" stroke-width="0.7"/>
+  <rect x="${bandX}" y="${bodyY}" width="${bandW}" height="${bodyH}" fill="url(#sv${uid})" stroke="#7a828c" stroke-width="0.5"/>
+  <ellipse cx="${capX}" cy="${ty}" rx="${Math.max(3, bodyH * 0.12)}" ry="${bodyH * 0.38}" fill="#c8ccd2" stroke="#707880" stroke-width="1"/>
+  <circle cx="${capX}" cy="${ty}" r="${Math.max(2, bodyH * 0.08)}" fill="#eef1f4"/>
+  <text class="pol-l" x="${plusX}" y="${ty + fs * 0.35}" text-anchor="middle" font-size="${fs}" font-weight="700" fill="#fff" font-family="sans-serif">+</text>
+  <text class="pol-r" x="${minusX}" y="${ty + fs * 0.35}" text-anchor="middle" font-size="${fs}" font-weight="700" fill="#fff" font-family="sans-serif">−</text>
+</svg>`;
+  }
+  return '';
+}
+
+function renderPieces() {
+  const keep = new Set(state.pieces.map(p => p.uid));
+  [...canvas.querySelectorAll('.piece')].forEach(el => {
+    if (!keep.has(el.dataset.uid)) el.remove();
+  });
+  state.pieces.forEach(p => {
+    let el = canvas.querySelector('.piece[data-uid="' + p.uid + '"]');
+    const inst = findInst(p.type);
+    const sz = instSize(p.type);
+    if (!el) {
+      el = document.createElement('div');
+      el.className = 'piece';
+      el.dataset.uid = p.uid;
+      // No end-hit stretch handles — length is fixed to one cell
+      el.innerHTML = `<div class="piece-body"></div><button type="button" class="rot-handle" title="橫／直轉" aria-label="橫／直轉">${ROT_ARROW}</button>`;
+      canvas.appendChild(el);
+      const body = el.querySelector('.piece-body');
+      body.addEventListener('pointerdown', onPieceDown);
+      el.querySelector('.rot-handle').addEventListener('pointerdown', onRotClick);
+    } else if (!el.querySelector('.rot-handle')) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'rot-handle';
+      btn.title = '橫／直轉';
+      btn.setAttribute('aria-label', '旋轉');
+      btn.innerHTML = ROT_ARROW;
+      el.appendChild(btn);
+      btn.addEventListener('pointerdown', onRotClick);
+    }
+    // Switch open/close handle — only on switch pieces; hidden unless selected (CSS)
+    let swBtn = el.querySelector('.sw-handle');
+    if (p.type === 'switch') {
+      if (!swBtn) {
+        swBtn = document.createElement('button');
+        swBtn.type = 'button';
+        swBtn.className = 'sw-handle';
+        swBtn.title = '開／關';
+        el.appendChild(swBtn);
+        swBtn.addEventListener('pointerdown', onSwClick);
+      }
+    } else if (swBtn) {
+      swBtn.remove();
+      swBtn = null;
+    }
+    const body = el.querySelector('.piece-body');
+    body.style.width = sz.w + 'px';
+    body.style.height = sz.h + 'px';
+    body.innerHTML = buildPieceSvg(p);
+    const svgEl = body.querySelector('svg');
+    if (svgEl) { svgEl.setAttribute('width', sz.w); svgEl.setAttribute('height', sz.h); }
+    if (p.type === 'switch') updateSwitchVisual(p, el);
+    el.style.left = p.x + 'px';
+    el.style.top = p.y + 'px';
+    el.style.zIndex = String(10 + (p.z || 0));
+    p.rot = normalizeRot(p.rot);
+    el.style.transform = 'rotate(' + p.rot + 'deg)';
+    const counter = 'rotate(' + (-p.rot) + 'deg)';
+    const handle = el.querySelector('.rot-handle');
+    if (handle) handle.style.transform = counter;
+    if (swBtn) {
+      const on = !!p.closed; // closed = 通電 = 開
+      swBtn.textContent = on ? '關' : '開';
+      swBtn.setAttribute('aria-label', on ? '關閉開關' : '打開開關');
+      swBtn.title = on ? '目前開通，點擊關閉' : '目前關閉，點擊開通';
+      swBtn.classList.toggle('is-on', on);
+      swBtn.classList.toggle('is-off', !on);
+      swBtn.style.transform = counter;
+    }
+    el.classList.toggle('selected', p.uid === state.selected);
+  });
+  updateEmpty();
+  updateSelBar();
+  renderPalette();
+  updateBulbVisuals();
+}
+
+function addPiece(type, x, y) {
+  const inst = findInst(type);
+  if (!inst || usedCount(type) >= inst.qty) return null;
+  const sz = instSize(type);
+  const p = {
+    uid: uid(),
+    type,
+    x: Math.max(0, x),
+    y: Math.max(0, y),
+    rot: 0,
+    z: state.nextZ++,
+    a: null,
+    b: null,
+    closed: type === 'switch' ? true : undefined,
+    flip: false
+  };
+  const maxX = Math.max(0, canvas.clientWidth - sz.w);
+  const maxY = Math.max(0, canvas.clientHeight - sz.h);
+  p.x = Math.min(maxX, p.x);
+  p.y = Math.min(maxY, p.y);
+  state.pieces.push(p);
+  state.selected = p.uid;
+  applySnapFromPosition(p);
+  renderPieces();
+  updateCircuit();
+  setStatus('已放入「' + inst.name + '」——長度固定一格，靠近相鄰金屬柱會吸附');
+  return p;
+}
+
+function selectPiece(uidVal) {
+  state.selected = uidVal;
+  renderPieces();
+}
+
+function deletePiece(uidVal) {
+  state.pieces = state.pieces.filter(p => p.uid !== uidVal);
+  if (state.selected === uidVal) state.selected = null;
+  renderPieces();
+  updateCircuit();
+}
+
+function rotatePiece(uidVal) {
+  const p = getPiece(uidVal);
+  if (!p) return;
+  // Only two directions: horizontal (0°) ↔ vertical (90°)
+  p.rot = normalizeRot(p.rot) === 0 ? 90 : 0;
+  p.a = null; p.b = null;
+  applySnapFromPosition(p);
+  renderPieces();
+  updateCircuit();
+  const inst = findInst(p.type);
+  const dir = (p.rot || 0) === 90 ? '垂直' : '水平';
+  setStatus('已旋轉「' + (inst ? inst.name : p.type) + '」—— ' + dir + '（' + (p.rot || 0) + '°）');
+}
+
+function rotateSelected() {
+  if (state.selected) rotatePiece(state.selected);
+}
+
+function onRotClick(e) {
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  e.preventDefault();
+  e.stopPropagation();
+  const el = e.currentTarget.closest('.piece');
+  if (!el) return;
+  const uidVal = el.dataset.uid;
+  state.selected = uidVal;
+  rotatePiece(uidVal);
+}
+
+function toggleSwitch(uidVal) {
+  const p = getPiece(uidVal);
+  if (!p || p.type !== 'switch') return;
+  p.closed = !p.closed;
+  state.selected = uidVal;
+  renderPieces();
+  updateCircuit();
+  setStatus(p.closed ? '開關已開通（合上）' : '開關已關閉（打開／斷路）');
+}
+
+function onSwClick(e) {
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  e.preventDefault();
+  e.stopPropagation();
+  const el = e.currentTarget.closest('.piece');
+  if (!el) return;
+  toggleSwitch(el.dataset.uid);
+}
+
+function flipBattery() {
+  const p = getPiece(state.selected);
+  if (!p || p.type !== 'battery') return;
+  // Polarity via flip flag — do not use 180° rotation
+  p.flip = !p.flip;
+  if (p.a && p.b) alignPieceToPosts(p);
+  renderPieces();
+  updateCircuit();
+  setStatus(p.flip ? '已調換極性（＋喺另一端）' : '已調換極性');
+}
+
+/* ===== Palette long-press / cross-drag ===== */
+function clearArmTimer() {
+  if (state.drag && state.drag._timer) {
+    clearTimeout(state.drag._timer);
+    state.drag._timer = null;
+  }
+}
+
+function onPaletteDown(e) {
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  const type = e.currentTarget.dataset.type;
+  const inst = findInst(type);
+  if (!inst || usedCount(type) >= inst.qty) return;
+  const xy = ptrXY(e);
+  const srcEl = e.currentTarget;
+  state.drag = {
+    mode: 'arm',
+    type,
+    srcEl,
+    x0: xy.x,
+    y0: xy.y,
+    pointerId: e.pointerId != null ? e.pointerId : xy.id,
+    portrait: isPortraitRow(),
+    _timer: null
+  };
+  srcEl.classList.add('armed');
+  state.drag._timer = setTimeout(() => {
+    if (!state.drag || state.drag.mode !== 'arm') return;
+    const d = state.drag;
+    try { if (d.srcEl && e.pointerId != null) d.srcEl.setPointerCapture(e.pointerId); } catch (_) {}
+    startPaletteGhost(d.type, { x: d.x0, y: d.y0 }, d.pointerId, d.srcEl);
+    setStatus('拖入底板…');
+  }, LONG_PRESS_MS);
+}
+
+function startPaletteGhost(type, xy, pointerId, srcEl) {
+  clearArmTimer();
+  const inst = findInst(type);
+  if (!inst) return;
+  setDragLock(true);
+  if (srcEl) {
+    srcEl.classList.remove('armed');
+    srcEl.classList.add('dragging-src');
+  }
+  const sz = instSize(type);
+  const ghost = document.createElement('div');
+  ghost.className = 'ghost';
+  const fake = { uid: 'ghost', type: type, closed: true };
+  ghost.innerHTML = `<div style="width:${sz.w}px;height:${sz.h}px">${buildPieceSvg(fake)}</div>`;
+  document.body.appendChild(ghost);
+  const ox = sz.w / 2, oy = sz.h / 2;
+  ghost.style.transform = 'translate(' + (xy.x - ox) + 'px,' + (xy.y - oy) + 'px)';
+  state.drag = { mode: 'palette', type, ghost, ox, oy, pointerId, srcEl };
+}
+
+function onPieceDown(e) {
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  e.preventDefault();
+  e.stopPropagation();
+  const body = e.currentTarget;
+  const el = body.closest('.piece');
+  const p = getPiece(el.dataset.uid);
+  if (!p) return;
+  const xy = ptrXY(e);
+  const wasSelected = state.selected === p.uid;
+  state.selected = p.uid;
+  canvas.querySelectorAll('.piece.selected').forEach(x => { if (x !== el) x.classList.remove('selected'); });
+  el.classList.add('selected', 'dragging');
+  try { body.setPointerCapture(e.pointerId); } catch (_) {}
+  setDragLock(true);
+  updateSelBar();
+  const pt = clientToCanvas(xy.x, xy.y);
+  state.drag = {
+    mode: 'piece',
+    uid: p.uid,
+    dx: pt.x - p.x,
+    dy: pt.y - p.y,
+    pointerId: e.pointerId != null ? e.pointerId : xy.id,
+    el,
+    x0: xy.x,
+    y0: xy.y,
+    moved: false,
+    wasSelected,
+    tapAction: null
+  };
+  // prepare tap action
+  if (p.type === 'switch') state.drag.tapAction = 'toggle';
+  else if (p.type === 'battery') state.drag.tapAction = 'flip';
+}
+
+function onEndDown(e) {
+  // Length is fixed to one cell — no stretch handles
+  e.preventDefault();
+  e.stopPropagation();
+}
+
+function onPointerMove(e) {
+  if (!state.drag) return;
+  if (state.drag.pointerId !== undefined && e.pointerId !== undefined && e.pointerId !== state.drag.pointerId) return;
+  const xy = ptrXY(e);
+
+  if (state.drag.mode === 'arm') {
+    const dx = xy.x - state.drag.x0;
+    const dy = xy.y - state.drag.y0;
+    const dist = Math.hypot(dx, dy);
+    const portrait = !!state.drag.portrait;
+    if (portrait) {
+      if (Math.abs(dx) > MOVE_CANCEL_PX && Math.abs(dx) > Math.abs(dy) * 1.15) { cancelArm(); return; }
+    } else {
+      if (Math.abs(dy) > MOVE_CANCEL_PX && Math.abs(dy) > Math.abs(dx) * 1.15) { cancelArm(); return; }
+    }
+    let cross = false;
+    if (portrait) {
+      if (Math.abs(dy) > CROSS_DRAG_PX && Math.abs(dy) >= Math.abs(dx) * 0.85) cross = true;
+    } else {
+      if (Math.abs(dx) > CROSS_DRAG_PX && Math.abs(dx) >= Math.abs(dy) * 0.85) cross = true;
+    }
+    if (cross || dist > 40) {
+      if (e.cancelable) e.preventDefault();
+      const { type, srcEl, pointerId } = state.drag;
+      try { if (srcEl && e.pointerId != null) srcEl.setPointerCapture(e.pointerId); } catch (_) {}
+      startPaletteGhost(type, xy, pointerId, srcEl);
+    }
+    return;
+  }
+
+  if (e.cancelable) e.preventDefault();
+
+  if (state.drag.mode === 'palette') {
+    state.drag.ghost.style.transform = 'translate(' + (xy.x - state.drag.ox) + 'px,' + (xy.y - state.drag.oy) + 'px)';
+  } else if (state.drag.mode === 'piece') {
+    const p = getPiece(state.drag.uid);
+    if (!p) return;
+    if (Math.hypot(xy.x - state.drag.x0, xy.y - state.drag.y0) > 8) state.drag.moved = true;
+    const sz = instSize(p.type);
+    const pt = clientToCanvas(xy.x, xy.y);
+    // free move — clear snap while dragging
+    p.a = null; p.b = null;
+    const maxX = Math.max(0, Math.max(canvas.scrollWidth, canvas.clientWidth) - sz.w);
+    const maxY = Math.max(0, Math.max(canvas.scrollHeight, canvas.clientHeight) - sz.h);
+    p.x = Math.min(maxX, Math.max(0, pt.x - state.drag.dx));
+    p.y = Math.min(maxY, Math.max(0, pt.y - state.drag.dy));
+    state.drag.el.style.left = p.x + 'px';
+    state.drag.el.style.top = p.y + 'px';
+    state.drag.el.style.transform = 'rotate(' + (p.rot || 0) + 'deg)';
+  }
+}
+
+function cancelArm() {
+  clearArmTimer();
+  if (state.drag && state.drag.srcEl) {
+    state.drag.srcEl.classList.remove('armed', 'dragging-src');
+  }
+  state.drag = null;
+}
+
+function onPointerUp(e) {
+  if (!state.drag) return;
+  if (state.drag.pointerId !== undefined && e.pointerId !== undefined && e.pointerId !== state.drag.pointerId) return;
+  const xy = ptrXY(e);
+
+  if (state.drag.mode === 'arm') {
+    cancelArm();
+    return;
+  }
+
+  if (state.drag.mode === 'palette') {
+    const g = state.drag.ghost;
+    const type = state.drag.type;
+    if (state.drag.srcEl) state.drag.srcEl.classList.remove('dragging-src', 'armed');
+    const r = canvas.getBoundingClientRect();
+    const inside = xy.x >= r.left && xy.x <= r.right && xy.y >= r.top && xy.y <= r.bottom;
+    if (inside) {
+      const sz = instSize(type);
+      const pt = clientToCanvas(xy.x, xy.y);
+      addPiece(type, pt.x - sz.w / 2, pt.y - sz.h / 2);
+    } else {
+      setStatus('未放入底板');
+    }
+    if (g && g.parentNode) g.remove();
+  } else if (state.drag.mode === 'piece') {
+    const p = getPiece(state.drag.uid);
+    const moved = state.drag.moved;
+    const tapAction = state.drag.tapAction;
+    if (state.drag.el) state.drag.el.classList.remove('dragging');
+    if (p) {
+      if (!moved && tapAction === 'toggle' && state.drag.wasSelected) {
+        p.closed = !p.closed;
+      } else if (!moved && tapAction === 'flip' && state.drag.wasSelected) {
+        p.flip = !p.flip;
+        if (p.a && p.b) alignPieceToPosts(p);
+      } else {
+        applySnapFromPosition(p);
+      }
+      if (p.a && p.b) alignPieceToPosts(p);
+    }
+    renderPieces();
+    updateCircuit();
+  }
+  state.drag = null;
+  setDragLock(false);
+}
+
+/* ===== Schematic ===== */
+function schemCssSize() {
+  // Clear inline sizes so CSS flex (min-height:200) can lay out, then measure.
+  const wrap = schemWrap || schemCanvas.parentElement;
+  schemCanvas.style.width = '';
+  schemCanvas.style.height = '';
+  void schematicPanel.offsetWidth; // force reflow after .visible
+  const wr = wrap ? wrap.getBoundingClientRect() : { width: 0, height: 0 };
+  const pr = schematicPanel.getBoundingClientRect();
+  const cw = schemCanvas.clientWidth;
+  const ch = schemCanvas.clientHeight;
+  const sw = Math.max(cw, wr.width, pr.width > 2 ? pr.width : 0, 200);
+  const sh = Math.max(ch, wr.height, pr.height > 40 ? (pr.height - 36) : 0, 200);
+  return { sw: Math.floor(sw), sh: Math.floor(sh) };
+}
+
+function resizeSchematic() {
+  if (!state.showSchematic && !state.showSchemHint) return;
+  if (!schematicPanel.classList.contains('visible')) return;
+  const { sw, sh } = schemCssSize();
+  schemDpr = Math.min(window.devicePixelRatio || 1, 2);
+  dpr = schemDpr;
+  // Pin display size to the measured box so bitmap ↔ CSS stay in sync
+  schemCanvas.style.width = sw + 'px';
+  schemCanvas.style.height = sh + 'px';
+  const bw = Math.max(1, Math.floor(sw * schemDpr));
+  const bh = Math.max(1, Math.floor(sh * schemDpr));
+  if (schemCanvas.width !== bw || schemCanvas.height !== bh) {
+    schemCanvas.width = bw;
+    schemCanvas.height = bh;
+  }
+  schemCtx.setTransform(schemDpr, 0, 0, schemDpr, 0, 0);
+  drawSchematic();
+}
+
+function scheduleSchematicResize() {
+  requestAnimationFrame(() => {
+    resizeSchematic();
+    requestAnimationFrame(() => resizeSchematic());
+  });
+  // After CSS flex/width settles (no width transition now, but layout may lag on iPad)
+  setTimeout(() => resizeSchematic(), 50);
+  setTimeout(() => resizeSchematic(), 200);
+}
+
+function drawSchematic() {
+  const ctx = schemCtx;
+  const ratio = schemDpr || dpr || 1;
+  let w = schemCanvas.width / ratio;
+  let h = schemCanvas.height / ratio;
+  // If bitmap still empty/default-small while panel is open, force a size once
+  if ((!w || !h || w < 50 || h < 50) && (state.showSchematic || state.showSchemHint)) {
+    const { sw, sh } = schemCssSize();
+    schemDpr = Math.min(window.devicePixelRatio || 1, 2);
+    schemCanvas.style.width = sw + 'px';
+    schemCanvas.style.height = sh + 'px';
+    schemCanvas.width = Math.floor(sw * schemDpr);
+    schemCanvas.height = Math.floor(sh * schemDpr);
+    schemCtx.setTransform(schemDpr, 0, 0, schemDpr, 0, 0);
+    w = sw; h = sh;
+  }
+  if (!w || !h) return;
+  ctx.setTransform(schemDpr || ratio, 0, 0, schemDpr || ratio, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = '#fffdf7';
+  ctx.fillRect(0, 0, w, h);
+
+  // Hint-only: coaching text lives in #schem-hint-box (do not draw the answer)
+  if (!state.showSchematic) return;
+
+  // Only snapped, valid one-cell connections
+  const connected = state.pieces.filter(c => {
+    if (!c.a || !c.b || c.a === c.b) return false;
+    const pa = getPost(c.a), pb = getPost(c.b);
+    return pa && pb && areAdjacentPosts(pa, pb);
+  });
+  if (!connected.length) {
+    ctx.fillStyle = '#999';
+    ctx.font = '13px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('將元件兩端吸附到金屬柱後顯示', w / 2, h / 2);
+    return;
+  }
+
+  const used = new Set();
+  connected.forEach(c => { used.add(c.a); used.add(c.b); });
+  const usedPosts = state.posts.filter(p => used.has(p.id));
+  let minC = Infinity, maxC = -Infinity, minR = Infinity, maxR = -Infinity;
+  usedPosts.forEach(p => {
+    minC = Math.min(minC, p.col); maxC = Math.max(maxC, p.col);
+    minR = Math.min(minR, p.row); maxR = Math.max(maxR, p.row);
+  });
+
+  // Orthogonal grid: map 5×5 posts → schematic coords (equal pitch)
+  const cols = Math.max(1, maxC - minC);
+  const rows = Math.max(1, maxR - minR);
+  const pad = 40;
+  const usableW = Math.max(40, w - pad * 2);
+  const usableH = Math.max(40, h - pad * 2);
+  const cell = Math.min(usableW / Math.max(cols, 1), usableH / Math.max(rows, 1), 72);
+  const gridW = cell * cols;
+  const gridH = cell * rows;
+  const ox = (w - gridW) / 2;
+  const oy = (h - gridH) / 2;
+
+  function postXY(post) {
+    return {
+      x: ox + (post.col - minC) * cell,
+      y: oy + (post.row - minR) * cell
+    };
+  }
+
+  // Degree of each post (how many component ends meet)
+  const degree = {};
+  connected.forEach(c => {
+    degree[c.a] = (degree[c.a] || 0) + 1;
+    degree[c.b] = (degree[c.b] || 0) + 1;
+  });
+
+  ctx.strokeStyle = '#111';
+  ctx.fillStyle = '#111';
+  ctx.lineWidth = 2.2;
+  ctx.lineCap = 'butt';
+  ctx.lineJoin = 'miter';
+
+  /** Draw orthogonal lead from (x1,y1) toward (x2,y2), stopping `gap` before midpoint. */
+  function leadToGap(x1, y1, x2, y2, gap) {
+    const dx = x2 - x1, dy = y2 - y1;
+    const len = Math.hypot(dx, dy) || 1;
+    const t = Math.max(0, (len / 2 - gap) / len);
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x1 + dx * t, y1 + dy * t);
+    ctx.stroke();
+  }
+
+  for (const c of connected) {
+    const a = getPost(c.a), b = getPost(c.b);
+    if (!a || !b) continue;
+    const A = postXY(a), B = postXY(b);
+    const x1 = A.x, y1 = A.y, x2 = B.x, y2 = B.y;
+    const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+    const horiz = a.row === b.row; // same row → horizontal edge
+    // Unit along component: from a → b
+    const ux = horiz ? (x2 > x1 ? 1 : -1) : 0;
+    const uy = horiz ? 0 : (y2 > y1 ? 1 : -1);
+    // Perpendicular (screen up for horiz, left for vert — for label offset)
+    const px = -uy, py = ux;
+
+    if (c.type === 'strip') {
+      // 導片：直線連兩柱
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+    } else if (c.type === 'bulb') {
+      // 燈泡：空心圓＋內弧；導線只接到弧兩端（弧入面唔畫線，避免變成 D 形）
+      const R = Math.min(16, cell * 0.25);
+      if (litBulbs.has(c.uid)) {
+        ctx.beginPath();
+        ctx.arc(mx, my, R, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 210, 60, 0.28)';
+        ctx.fill();
+        ctx.fillStyle = '#111';
+      }
+      drawLampSymbol(ctx, mx, my, R, horiz, x1, y1, x2, y2);
+    } else if (c.type === 'switch') {
+      // 開關：兩端空心小圓＋開／合槓
+      const gap = Math.min(18, cell * 0.28);
+      const ax = mx - ux * gap, ay = my - uy * gap;
+      const bx = mx + ux * gap, by = my + uy * gap;
+      leadToGap(x1, y1, x2, y2, gap + 3);
+      leadToGap(x2, y2, x1, y1, gap + 3);
+      // Terminal hollow circles
+      ctx.beginPath();
+      ctx.arc(ax, ay, 3.2, 0, Math.PI * 2);
+      ctx.fillStyle = '#fffdf7';
+      ctx.fill();
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(bx, by, 3.2, 0, Math.PI * 2);
+      ctx.fillStyle = '#fffdf7';
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#111';
+      ctx.beginPath();
+      ctx.moveTo(ax, ay);
+      if (c.closed) {
+        // 合：槓連到另一端
+        ctx.lineTo(bx, by);
+      } else {
+        // 開：斜槓離開（缺口）
+        ctx.lineTo(mx + ux * 2 + px * 14, my + uy * 2 + py * 14);
+      }
+      ctx.stroke();
+    } else if (c.type === 'battery') {
+      // 電池：長線＝＋、短線＝－（可標極性）
+      // a 端預設係＋（銅帽／左），flip 則相反
+      const plusAtA = !c.flip;
+      const gap = Math.min(16, cell * 0.26);
+      leadToGap(x1, y1, x2, y2, gap);
+      leadToGap(x2, y2, x1, y1, gap);
+      // Two parallel plates perpendicular to the span
+      const longHalf = Math.min(12, cell * 0.2);
+      const shortHalf = Math.min(7, cell * 0.12);
+      const sep = 5; // half-separation along span
+      // Position: + plate nearer the + terminal, − nearer −
+      const plusSign = plusAtA ? -1 : 1; // along ux from midpoint toward + end? 
+      // Midpoint → a is direction (-ux,-uy) from mid toward a... wait
+      // From mid toward a: -(ux,uy) since ux points a→b
+      // If plusAtA, long plate is toward a: offset = -sep along (ux,uy)
+      const longOff = plusAtA ? -sep : sep;
+      const shortOff = plusAtA ? sep : -sep;
+      // Long (+) plate
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.moveTo(mx + ux * longOff + px * longHalf, my + uy * longOff + py * longHalf);
+      ctx.lineTo(mx + ux * longOff - px * longHalf, my + uy * longOff - py * longHalf);
+      ctx.stroke();
+      // Short (−) plate (slightly thicker look via shorter length)
+      ctx.lineWidth = 3.2;
+      ctx.beginPath();
+      ctx.moveTo(mx + ux * shortOff + px * shortHalf, my + uy * shortOff + py * shortHalf);
+      ctx.lineTo(mx + ux * shortOff - px * shortHalf, my + uy * shortOff - py * shortHalf);
+      ctx.stroke();
+      ctx.lineWidth = 2.2;
+      // ＋ − labels
+      ctx.font = 'bold 12px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const lab = Math.min(18, cell * 0.28);
+      const plusX = mx + ux * longOff + px * (longHalf + 10);
+      const plusY = my + uy * longOff + py * (longHalf + 10);
+      const minusX = mx + ux * shortOff + px * (shortHalf + 10);
+      const minusY = my + uy * shortOff + py * (shortHalf + 10);
+      ctx.fillText('＋', plusX, plusY);
+      ctx.fillText('－', minusX, minusY);
+    }
+  }
+
+  // 接點：只喺 T／交叉（degree ≥ 3）畫實心黑圓點；轉角／兩端相接唔畫
+  ctx.fillStyle = '#111';
+  usedPosts.forEach(p => {
+    if ((degree[p.id] || 0) >= 3) {
+      const pt = postXY(p);
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  });
+
+}
+
+/** Light textbook-style symbol legend (hints only — not the full answer). */
+function drawSchemHintLegend(ctx, w, h) {
+  const boxH = 78;
+  const y0 = h - boxH - 6;
+  ctx.save();
+  ctx.fillStyle = 'rgba(255, 253, 247, 0.92)';
+  ctx.strokeStyle = '#c4bdb0';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.rect(8, y0, w - 16, boxH);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = '#c45f0a';
+  ctx.font = 'bold 11px sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText('符號提示（課本畫法）', 16, y0 + 6);
+
+  const items = [
+    { label: '電池：長＋短－', draw: drawHintBattery },
+    { label: '燈泡：圓＋內弧', draw: drawHintBulb },
+    { label: '開關：缺口', draw: drawHintSwitch },
+    { label: '導線：直線', draw: drawHintWire }
+  ];
+  const slot = (w - 24) / items.length;
+  items.forEach((it, i) => {
+    const cx = 16 + slot * i + slot * 0.35;
+    const cy = y0 + 42;
+    ctx.strokeStyle = '#888';
+    ctx.fillStyle = '#888';
+    ctx.lineWidth = 1.6;
+    ctx.setLineDash([]);
+    it.draw(ctx, cx, cy);
+    ctx.fillStyle = '#666';
+    ctx.font = '10px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(it.label, cx, y0 + 58);
+  });
+  ctx.restore();
+}
+
+function drawHintBattery(ctx, cx, cy) {
+  // long + short plates, solid leads
+  ctx.beginPath(); ctx.moveTo(cx - 22, cy); ctx.lineTo(cx - 6, cy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx + 6, cy); ctx.lineTo(cx + 22, cy); ctx.stroke();
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(cx - 5, cy - 10); ctx.lineTo(cx - 5, cy + 10); ctx.stroke(); // +
+  ctx.lineWidth = 2.6;
+  ctx.beginPath(); ctx.moveTo(cx + 5, cy - 6); ctx.lineTo(cx + 5, cy + 6); ctx.stroke(); // −
+  ctx.lineWidth = 1.6;
+  ctx.font = '9px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('＋', cx - 5, cy - 14);
+}
+
+/** Textbook lamp: hollow circle + inner horseshoe. Leads stop at the arc ends (no diameter through the arch). */
+function drawLampSymbol(ctx, cx, cy, R, horiz, x1, y1, x2, y2) {
+  const r = R * 0.46;
+  ctx.beginPath();
+  ctx.arc(cx, cy, R, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  if (horiz) {
+    ctx.arc(cx, cy, r, Math.PI, 0, false); // ∩ opening down
+    ctx.stroke();
+    const left = Math.min(x1, x2);
+    const right = Math.max(x1, x2);
+    ctx.beginPath(); ctx.moveTo(left, cy); ctx.lineTo(cx - r, cy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx + r, cy); ctx.lineTo(right, cy); ctx.stroke();
+  } else {
+    ctx.arc(cx, cy, r, -Math.PI / 2, Math.PI / 2, false); // ⊃ opening left
+    ctx.stroke();
+    const top = Math.min(y1, y2);
+    const bot = Math.max(y1, y2);
+    ctx.beginPath(); ctx.moveTo(cx, top); ctx.lineTo(cx, cy - r); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx, cy + r); ctx.lineTo(cx, bot); ctx.stroke();
+  }
+}
+
+function drawHintBulb(ctx, cx, cy) {
+  drawLampSymbol(ctx, cx, cy, 9, true, cx - 22, cy, cx + 22, cy);
+}
+
+function drawHintSwitch(ctx, cx, cy) {
+  ctx.beginPath(); ctx.moveTo(cx - 22, cy); ctx.lineTo(cx - 10, cy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx + 10, cy); ctx.lineTo(cx + 22, cy); ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx - 8, cy, 2.5, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx + 8, cy, 2.5, 0, Math.PI * 2); ctx.stroke();
+  // open gap lever
+  ctx.beginPath(); ctx.moveTo(cx - 8, cy); ctx.lineTo(cx + 4, cy - 10); ctx.stroke();
+}
+
+function drawHintWire(ctx, cx, cy) {
+  ctx.setLineDash([]);
+  ctx.beginPath(); ctx.moveTo(cx - 18, cy); ctx.lineTo(cx + 18, cy); ctx.stroke();
+}
+
+/* ===== Events ===== */
+canvas.addEventListener('pointerdown', (e) => {
+  if (e.target === canvas || e.target.closest('.posts-layer') || e.target.classList.contains('post-dot')) {
+    selectPiece(null);
+  }
+});
+
+window.addEventListener('pointermove', onPointerMove, { passive: false });
+window.addEventListener('pointerup', onPointerUp);
+window.addEventListener('pointercancel', onPointerUp);
+
+if (!window.PointerEvent) {
+  document.addEventListener('touchmove', onPointerMove, { passive: false });
+  document.addEventListener('touchend', onPointerUp, { passive: false });
+  document.addEventListener('touchcancel', onPointerUp, { passive: false });
+}
+
+document.getElementById('btn-delete').onclick = () => deletePiece(state.selected);
+document.getElementById('btn-rotate').onclick = () => rotateSelected();
+btnFlipBat.onclick = () => flipBattery();
+const clearModal = document.getElementById('clear-modal');
+
+function openClearModal() {
+  clearModal.classList.add('open');
+  clearModal.setAttribute('aria-hidden', 'false');
+}
+
+function closeClearModal() {
+  clearModal.classList.remove('open');
+  clearModal.setAttribute('aria-hidden', 'true');
+}
+
+function clearBoard() {
+  state.pieces = [];
+  state.selected = null;
+  renderPieces();
+  updateCircuit();
+  setStatus('已清空');
+}
+
+document.getElementById('btn-reset').addEventListener('click', () => {
+  if (!state.pieces.length) {
+    setStatus('底板已經係空');
+    return;
+  }
+  openClearModal();
+});
+document.getElementById('clear-ok').addEventListener('click', () => {
+  closeClearModal();
+  clearBoard();
+});
+document.getElementById('clear-cancel').addEventListener('click', closeClearModal);
+clearModal.addEventListener('click', (e) => {
+  if (e.target === clearModal) closeClearModal();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && clearModal.classList.contains('open')) {
+    e.preventDefault();
+    closeClearModal();
+  }
+});
+
+
+function isSnapped(c) {
+  if (!c || !c.a || !c.b || c.a === c.b) return false;
+  const pa = getPost(c.a), pb = getPost(c.b);
+  return !!(pa && pb && areAdjacentPosts(pa, pb));
+}
+
+function getCircuitHints() {
+  const items = [];
+  const pieces = state.pieces;
+  if (!pieces.length) {
+    return [
+      '底板尚未有元件。',
+      '請先裝上電池和燈泡，以導片連接金屬柱，再繪畫電路圖。'
+    ];
+  }
+
+  const nBat = pieces.filter(p => p.type === 'battery').length;
+  const nBulb = pieces.filter(p => p.type === 'bulb').length;
+  const nSw = pieces.filter(p => p.type === 'switch').length;
+  const nStrip = pieces.filter(p => p.type === 'strip').length;
+  const parts = [];
+  if (nBat) parts.push('電池 ' + nBat + ' 個');
+  if (nBulb) parts.push('燈泡 ' + nBulb + ' 個');
+  if (nSw) parts.push('開關 ' + nSw + ' 個');
+  if (nStrip) parts.push('導片 ' + nStrip + ' 條');
+  items.push('現有：' + parts.join('、') + '。');
+
+  const loose = pieces.filter(p => !isSnapped(p));
+  if (loose.length) {
+    const looseTypes = { battery: 0, bulb: 0, switch: 0, strip: 0 };
+    loose.forEach(p => { if (looseTypes[p.type] != null) looseTypes[p.type]++; });
+    const names = [];
+    if (looseTypes.battery) names.push('電池');
+    if (looseTypes.bulb) names.push('燈泡');
+    if (looseTypes.switch) names.push('開關');
+    if (looseTypes.strip) names.push('導片');
+    items.push('有 ' + loose.length + ' 件元件未接上金屬柱（' + names.join('、') + '）。請先扣緊兩端。');
+  }
+
+  if (nBat === 0) {
+    items.push('尚未加入電池。繪圖須由電池開始（長線為＋，短線為－）。');
+  } else {
+    const batLoose = pieces.filter(p => p.type === 'battery' && !isSnapped(p)).length;
+    if (batLoose === nBat) {
+      items.push('電池尚未接好。請將兩端扣上金屬柱（長線為＋，短線為－）。');
+    } else if (batLoose) {
+      items.push('部分電池尚未接好，請先扣緊兩端。');
+    }
+  }
+
+  if (nBulb === 0) {
+    items.push('尚未加入燈泡。');
+  } else if (pieces.some(p => p.type === 'bulb' && !isSnapped(p))) {
+    items.push('部分燈泡尚未接好，無法形成回路。');
+  }
+
+  const openSw = pieces.filter(p => p.type === 'switch' && !p.closed);
+  if (nSw && openSw.length === nSw) {
+    items.push('開關全部斷開。請先合上開關。');
+  } else if (openSw.length) {
+    items.push('有 ' + openSw.length + ' 個開關斷開，電流會在該處中斷。');
+  }
+
+  if (nBat && nBulb) {
+    const lit = pieces.filter(p => p.type === 'bulb' && litBulbs.has(p.uid)).length;
+    if (lit > 0) {
+      items.push('回路已閉合（' + lit + ' 盞燈發亮）。請由電池＋極開始，沿回路以符號表示各元件。');
+      items.push('導線須畫成橫線和直線。三條或以上導線相交時，才加上實心點。');
+    } else {
+      items.push('燈泡未亮，回路尚未閉合。請由電池＋極沿電路檢查何處中斷。');
+      if (openSw.length) {
+        items.push('請先檢查已斷開的開關。');
+      } else if (nStrip === 0) {
+        items.push('尚未加入導片。請用導片連接電池和燈泡。');
+      }
+    }
+  } else if (nBat && !nBulb) {
+    items.push('已有電池，但尚未加入燈泡。');
+  }
+
+  return items;
+}
+
+function renderHintBox() {
+  const box = document.getElementById('schem-hint-box');
+  if (!box) return;
+  if (!state.showSchemHint) {
+    box.classList.remove('show');
+    box.innerHTML = '';
+    return;
+  }
+  box.classList.add('show');
+  const items = getCircuitHints();
+  const kicker = '<p class="hint-kicker">根據目前電路（不顯示完整答案）</p>';
+  box.innerHTML = kicker + '<ol>' + items.map(t => '<li>' + t + '</li>').join('') + '</ol>';
+}
+
+function syncSchematicPanel() {
+  const open = state.showSchematic || state.showSchemHint;
+  schematicPanel.classList.toggle('visible', open);
+  schematicPanel.classList.toggle('hint-only', state.showSchemHint && !state.showSchematic);
+  schematicPanel.classList.toggle('with-both', state.showSchemHint && state.showSchematic);
+  schematicPanel.setAttribute('aria-hidden', open ? 'false' : 'true');
+  const title = schematicPanel.querySelector('h2');
+  if (title) {
+    if (state.showSchematic && state.showSchemHint) title.textContent = '電路圖（含提示）';
+    else if (state.showSchemHint && !state.showSchematic) title.textContent = '電路圖提示';
+    else title.textContent = '電路圖';
+  }
+  btnSchematic.textContent = state.showSchematic ? '隱藏電路圖' : '顯示電路圖';
+  btnSchematic.classList.toggle('show-on', state.showSchematic);
+  btnSchemHint.textContent = state.showSchemHint ? '隱藏電路圖提示' : '顯示電路圖提示';
+  btnSchemHint.classList.toggle('show-on', state.showSchemHint);
+  if (state.showSchemHint) renderHintBox();
+  else {
+    const box = document.getElementById('schem-hint-box');
+    if (box) { box.classList.remove('show'); box.innerHTML = ''; }
+  }
+  if (schemWrap) {
+    schemWrap.style.display = state.showSchematic ? 'flex' : 'none';
+  }
+  if (state.showSchematic) scheduleSchematicResize();
+}
+
+const schemAskModal = document.getElementById('schem-ask-modal');
+
+function openSchemAskModal() {
+  schemAskModal.classList.add('open');
+  schemAskModal.setAttribute('aria-hidden', 'false');
+}
+
+function closeSchemAskModal() {
+  schemAskModal.classList.remove('open');
+  schemAskModal.setAttribute('aria-hidden', 'true');
+}
+
+function revealSchematic() {
+  state.showSchematic = true;
+  syncSchematicPanel();
+}
+
+btnSchematic.addEventListener('click', () => {
+  if (state.showSchematic) {
+    state.showSchematic = false;
+    syncSchematicPanel();
+    return;
+  }
+  openSchemAskModal();
+});
+
+document.getElementById('schem-ask-yes').addEventListener('click', () => {
+  closeSchemAskModal();
+  revealSchematic();
+});
+document.getElementById('schem-ask-no').addEventListener('click', () => {
+  closeSchemAskModal();
+  setStatus('請先自行繪畫電路圖，再按顯示核對。');
+});
+schemAskModal.addEventListener('click', (e) => {
+  if (e.target === schemAskModal) closeSchemAskModal();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && schemAskModal.classList.contains('open')) {
+    e.preventDefault();
+    closeSchemAskModal();
+  }
+});
+
+const hintPwModal = document.getElementById('hint-pw-modal');
+const hintPwInput = document.getElementById('hint-pw-input');
+const hintPwErr = document.getElementById('hint-pw-err');
+
+function openHintPassword() {
+  hintPwInput.value = '';
+  hintPwErr.hidden = true;
+  hintPwModal.classList.add('open');
+  hintPwModal.setAttribute('aria-hidden', 'false');
+  setTimeout(() => hintPwInput.focus(), 50);
+}
+
+function closeHintPassword() {
+  hintPwModal.classList.remove('open');
+  hintPwModal.setAttribute('aria-hidden', 'true');
+  hintPwInput.value = '';
+  hintPwErr.hidden = true;
+}
+
+function submitHintPassword() {
+  const val = (hintPwInput.value || '').trim();
+  if (val === HINT_PASSWORD) {
+    state.hintUnlocked = true;
+    state.showSchemHint = true;
+    closeHintPassword();
+    syncSchematicPanel();
+    setStatus('已解鎖電路圖提示');
+    return;
+  }
+  hintPwErr.hidden = false;
+  hintPwInput.value = '';
+  hintPwInput.focus();
+}
+
+btnSchemHint.addEventListener('click', () => {
+  if (state.showSchemHint) {
+    state.showSchemHint = false;
+    syncSchematicPanel();
+    return;
+  }
+  if (state.hintUnlocked) {
+    state.showSchemHint = true;
+    syncSchematicPanel();
+    return;
+  }
+  openHintPassword();
+});
+
+document.getElementById('hint-pw-ok').addEventListener('click', submitHintPassword);
+document.getElementById('hint-pw-cancel').addEventListener('click', closeHintPassword);
+hintPwInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); submitHintPassword(); }
+  if (e.key === 'Escape') { e.preventDefault(); closeHintPassword(); }
+});
+hintPwModal.addEventListener('click', (e) => {
+  if (e.target === hintPwModal) closeHintPassword();
+});
+
+function onResize() {
+  layoutPosts();
+  // re-align snapped pieces to new post positions
+  state.pieces.forEach(p => {
+    if (p.a && p.b) alignPieceToPosts(p);
+  });
+  renderPieces();
+  updateCircuit();
+  resizeSchematic();
+}
+
+window.addEventListener('resize', () => {
+  clearTimeout(window.__rz);
+  window.__rz = setTimeout(onResize, 80);
+});
+
+document.addEventListener('selectstart', (e) => {
+  if (isHardDrag() || e.target.closest('.piece, .palette-item, .rot-handle, .sw-handle')) e.preventDefault();
+});
+document.addEventListener('contextmenu', (e) => {
+  if (e.target.closest('.palette-item, .piece, .rot-handle, .sw-handle')) e.preventDefault();
+});
+document.addEventListener('keydown', (e) => {
+  if (!state.selected) return;
+  if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); deletePiece(state.selected); }
+});
+
+layoutPosts();
+renderPalette();
+updateEmpty();
+setStatus('就緒 —— 5×5 底板 · 元件一格長 · 長按拖出');
+})();
+</script>
+</body>
+</html>
