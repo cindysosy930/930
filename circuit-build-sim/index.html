@@ -250,16 +250,23 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
 .schematic-panel .schem-wrap {
   flex: 1 1 auto;
   position: relative;
-  min-height: 200px;
+  min-height: 140px;
+  min-width: 0;
   width: 100%;
+  max-width: 100%;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
 .schematic-panel canvas {
-  flex: 1 1 auto;
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
-  min-height: 200px;
+  min-width: 0;
+  min-height: 0;
+  max-width: 100%;
+  max-height: 100%;
   display: block;
   background: #fffdf7;
 }
@@ -348,8 +355,8 @@ footer {
     height: 200px;
     max-height: 42%;
   }
-  .schematic-panel .schem-wrap { min-height: 160px; }
-  .schematic-panel canvas { min-height: 160px; }
+  .schematic-panel .schem-wrap { min-height: 80px; }
+  .schematic-panel canvas { min-height: 0; }
 }
 
 .piece {
@@ -1717,17 +1724,33 @@ function onPointerUp(e) {
 
 /* ===== Schematic ===== */
 function schemCssSize() {
-  // Clear inline sizes so CSS flex (min-height:200) can lay out, then measure.
+  // Size the canvas to the wrap box only. Never Math.max() against
+  // canvas.clientWidth/Height: after display:none (hint-only) iPad Safari
+  // can report a viewport-sized canvas, which then overflows to the
+  // bottom-right of the screen and the drawing looks "走位".
   const wrap = schemWrap || schemCanvas.parentElement;
-  schemCanvas.style.width = '';
-  schemCanvas.style.height = '';
-  void schematicPanel.offsetWidth; // force reflow after .visible
-  const wr = wrap ? wrap.getBoundingClientRect() : { width: 0, height: 0 };
+  schemCanvas.style.width = '100%';
+  schemCanvas.style.height = '100%';
+  schemCanvas.style.maxWidth = '100%';
+  schemCanvas.style.maxHeight = '100%';
+  void schematicPanel.offsetHeight;
   const pr = schematicPanel.getBoundingClientRect();
-  const cw = schemCanvas.clientWidth;
-  const ch = schemCanvas.clientHeight;
-  const sw = Math.max(cw, wr.width, pr.width > 2 ? pr.width : 0, 200);
-  const sh = Math.max(ch, wr.height, pr.height > 40 ? (pr.height - 36) : 0, 200);
+  const title = schematicPanel.querySelector('h2');
+  const hintBox = document.getElementById('schem-hint-box');
+  const titleH = title && title.offsetHeight ? title.offsetHeight : 32;
+  const hintVisible = !!(hintBox && state.showSchemHint && hintBox.classList.contains('show'));
+  const hintH = hintVisible ? hintBox.getBoundingClientRect().height : 0;
+  const wr = wrap ? wrap.getBoundingClientRect() : { width: 0, height: 0 };
+  let sw = wr.width;
+  let sh = wr.height;
+  if (sw < 20 || sh < 20) {
+    sw = pr.width;
+    sh = pr.height - titleH - hintH;
+  }
+  const maxW = Math.max(80, pr.width);
+  const maxH = Math.max(80, pr.height - titleH - hintH);
+  sw = Math.min(Math.max(sw, 80), maxW);
+  sh = Math.min(Math.max(sh, 80), maxH);
   return { sw: Math.floor(sw), sh: Math.floor(sh) };
 }
 
@@ -2251,7 +2274,10 @@ function syncSchematicPanel() {
   if (schemWrap) {
     schemWrap.style.display = state.showSchematic ? 'flex' : 'none';
   }
-  if (state.showSchematic) scheduleSchematicResize();
+  if (state.showSchematic) {
+    void schematicPanel.offsetWidth;
+    scheduleSchematicResize();
+  }
 }
 
 const schemAskModal = document.getElementById('schem-ask-modal');
