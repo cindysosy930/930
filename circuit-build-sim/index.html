@@ -997,12 +997,14 @@ function alignPieceToPosts(p) {
 function conductingEdges(excludeUid, opts) {
   opts = opts || {};
   const skipBatteries = !!opts.skipBatteries;
+  const skipBulbs = !!opts.skipBulbs;
   const edges = [];
   for (const c of state.pieces) {
     if (c.uid === excludeUid) continue;
     if (!c.a || !c.b || c.a === c.b) continue;
     if (c.type === 'switch' && !c.closed) continue;
     if (skipBatteries && c.type === 'battery') continue;
+    if (skipBulbs && c.type === 'bulb') continue;
     const pa = getPost(c.a), pb = getPost(c.b);
     // Only count a true snap: both ends on existing ortho-adjacent posts
     if (!pa || !pb || !areAdjacentPosts(pa, pb)) continue;
@@ -1066,8 +1068,9 @@ function validatePieceConnection(p) {
 
 /**
  * Bulb lights only with a true closed loop through at least one battery.
- * Series batteries are part of that path, so they count as conducting edges.
- * If the two bulb ends already meet with no battery in between, the bulb is shorted and stays off.
+ * Series batteries count as conducting edges on that path.
+ * Other bulbs also count on the loop, so series or parallel lamps can all light.
+ * A bulb stays off only if 導片／已合上的開關 already join its two ends (a real short).
  * Connection counts only when both ends snap onto adjacent metal posts.
  */
 function isBulbLit(bulb) {
@@ -1079,8 +1082,8 @@ function isBulbLit(bulb) {
   }
   if (!hasBattery) return false;
 
-  function adjFor(skipBatteries) {
-    const edges = conductingEdges(bulb.uid, { skipBatteries: skipBatteries });
+  function adjFor(opts) {
+    const edges = conductingEdges(bulb.uid, opts);
     const clean = [];
     for (const e of edges) {
       if (!e.comp.a || !e.comp.b) continue;
@@ -1091,9 +1094,9 @@ function isBulbLit(bulb) {
     return neighbors(clean);
   }
 
-  const viaBattery = canReachPost(bulb.a, bulb.b, adjFor(false));
-  const noBatteryPath = canReachPost(bulb.a, bulb.b, adjFor(true));
-  return viaBattery && !noBatteryPath;
+  const viaBattery = canReachPost(bulb.a, bulb.b, adjFor({ skipBatteries: false, skipBulbs: false }));
+  const shorted = canReachPost(bulb.a, bulb.b, adjFor({ skipBatteries: true, skipBulbs: true }));
+  return viaBattery && !shorted;
 }
 
 function updateCircuit() {
