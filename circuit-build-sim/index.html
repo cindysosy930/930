@@ -1042,6 +1042,30 @@ function canReachPost(start, goal, adj) {
   return false;
 }
 
+/** True only if a simple path from start to goal actually goes through a battery.
+ *  Walking out to a dangling battery and back does not count (that is not a closed loop).
+ */
+function canReachViaBattery(start, goal, adj) {
+  if (!start || !goal || start === goal) return false;
+  const seen = new Set([start]);
+  function dfs(node, usedBat) {
+    for (const e of (adj[node] || [])) {
+      const next = e.a === node ? e.b : e.a;
+      if (seen.has(next)) continue;
+      const nextUsed = usedBat || (e.comp && e.comp.type === "battery");
+      if (next === goal) {
+        if (nextUsed) return true;
+        continue;
+      }
+      seen.add(next);
+      if (dfs(next, nextUsed)) return true;
+      seen.delete(next);
+    }
+    return false;
+  }
+  return dfs(start, false);
+}
+
 /** Re-check piece still truly snapped (both terminals on assigned adjacent posts). */
 function validatePieceConnection(p) {
   if (!p.a || !p.b || p.a === p.b) {
@@ -1070,7 +1094,8 @@ function validatePieceConnection(p) {
  * Bulb lights only with a true closed loop through at least one battery.
  * Series batteries count as conducting edges on that path.
  * Other bulbs also count on the loop, so series or parallel lamps can all light.
- * A bulb stays off only if 導片／已合上的開關 already join its two ends (a real short).
+ * A path that only goes through another bulb (battery not in the loop) does not light.
+ * A bulb stays off if 導片／已合上的開關 already join its two ends (a real short).
  * Connection counts only when both ends snap onto adjacent metal posts.
  */
 function isBulbLit(bulb) {
@@ -1094,7 +1119,7 @@ function isBulbLit(bulb) {
     return neighbors(clean);
   }
 
-  const viaBattery = canReachPost(bulb.a, bulb.b, adjFor({ skipBatteries: false, skipBulbs: false }));
+  const viaBattery = canReachViaBattery(bulb.a, bulb.b, adjFor({ skipBatteries: false, skipBulbs: false }));
   const shorted = canReachPost(bulb.a, bulb.b, adjFor({ skipBatteries: true, skipBulbs: true }));
   return viaBattery && !shorted;
 }
