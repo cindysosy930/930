@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="format-detection" content="telephone=no" />
+<title>展示：簡單電路與電流路徑</title>
+<style>
+:root {
+  --bg: #f3efe6;
+  --panel: #fffdf8;
+  --ink: #1c1c1c;
+  --muted: #5c5c5c;
+  --accent: #c45f0a;
+  --accent-soft: #fff0e0;
+  --border: #c4bdb0;
+  --canvas: #fffcf5;
+  --danger: #a31818;
+  --green: #3d9a4a;
+  --green-dark: #2d7a38;
+  --hit: 48px;
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html { height: 100%; height: -webkit-fill-available; }
+html, body {
+  margin: 0; padding: 0;
+  font-family: "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", "Heiti TC", sans-serif;
+  background: var(--bg); color: var(--ink);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
+  overflow: hidden;
+  padding-top: var(--safe-t);
+  padding-right: var(--safe-r);
+  padding-bottom: var(--safe-b);
+  padding-left: var(--safe-l);
+}
+header {
+  flex-shrink: 0;
+  background: #243746;
+  color: #fff;
+  padding: 8px 12px 10px;
+}
+header h1 { margin: 0 0 3px; font-size: 1.05rem; font-weight: 700; }
+header p { margin: 0; font-size: 0.82rem; line-height: 1.4; opacity: 0.95; }
+header .tip {
+  margin-top: 5px; font-size: 0.72rem; opacity: 0.92;
+  background: rgba(255,255,255,0.12); display: inline-block;
+  padding: 2px 9px; border-radius: 999px;
+}
+.toolbar {
+  flex-shrink: 0;
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  padding: 7px 10px; background: var(--panel); border-bottom: 1px solid var(--border);
+}
+.toolbar .status {
+  font-size: 0.9rem; font-weight: 700; color: var(--ink);
+  min-height: var(--hit); display: flex; align-items: center;
+  padding: 0 4px;
+}
+.toolbar .status .on { color: var(--green-dark); }
+.toolbar .status .off { color: var(--danger); }
+.toolbar .spacer { flex: 1; min-width: 6px; }
+.toolbar .note {
+  font-size: 0.72rem; color: var(--muted); line-height: 1.3;
+  max-width: 280px;
+}
+button {
+  appearance: none; -webkit-appearance: none;
+  border: 1px solid var(--border); background: #fff;
+  color: var(--ink); border-radius: 10px; padding: 9px 14px;
+  font-size: 0.95rem; font-family: inherit; font-weight: 700;
+  min-height: var(--hit); min-width: var(--hit);
+  touch-action: manipulation; cursor: pointer;
+}
+button:active { background: var(--accent-soft); transform: scale(0.97); }
+button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+button.is-on {
+  background: var(--green); color: #fff; border-color: var(--green-dark);
+}
+button.is-off {
+  background: #fff; color: var(--danger); border-color: #e0b0b0;
+}
+
+.main {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  padding: 8px;
+  gap: 6px;
+}
+.canvas-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  background:
+    radial-gradient(circle, rgba(0,0,0,0.06) 1px, transparent 1.5px) 0 0 / 22px 22px,
+    var(--canvas);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.canvas-wrap svg.circuit {
+  width: 100%;
+  height: 100%;
+  max-width: 1100px;
+  max-height: 100%;
+  display: block;
+  touch-action: manipulation;
+}
+.sw-hit {
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.sw-hit:focus { outline: none; }
+.sw-hit:focus-visible rect.hit-area {
+  stroke: var(--accent);
+  stroke-width: 3;
+  stroke-dasharray: 6 4;
+}
+.arrow-layer { pointer-events: none; }
+.arrow-tri { fill: #c45f0a; stroke: #8a3f08; stroke-width: 0.6; }
+.bulb-glow { display: none; }
+.circuit.is-lit .bulb-glow { display: block; }
+.circuit.is-lit .bulb-dim { display: none; }
+.circuit:not(.is-closed) .arrow-layer { display: none; }
+@media (max-width: 700px), (orientation: portrait) {
+  header h1 { font-size: 0.98rem; }
+  header p { font-size: 0.78rem; }
+  .toolbar .note { display: none; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>展示：簡單電路與電流路徑</h1>
+  <p id="caption">開關斷開，電路未接通，燈泡不亮，沒有電流。</p>
+  <span class="tip" id="tip">提示：點擊開關或下方按鈕，觀察電流路徑</span>
+</header>
+<div class="toolbar">
+  <div class="status" id="swStatus">開關：<span class="off">關</span></div>
+  <button type="button" class="is-off" id="btnToggle" aria-label="打開開關">打開開關</button>
+  <div class="spacer"></div>
+  <div class="note">箭咀顯示傳統電流方向（由正極到負極）</div>
+</div>
+<div class="main">
+  <div class="canvas-wrap" id="canvasWrap">
+    <svg class="circuit" id="circuit" viewBox="0 0 960 560" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="電池、開關與燈泡組成的簡單電路">
+      <defs>
+        <linearGradient id="mt" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#f2f4f7"/><stop offset="100%" stop-color="#9aa3ad"/>
+        </linearGradient>
+        <linearGradient id="cu" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#f2b468"/><stop offset="45%" stop-color="#d47820"/><stop offset="100%" stop-color="#a05010"/>
+        </linearGradient>
+        <linearGradient id="sv" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#f0f3f6"/><stop offset="100%" stop-color="#9aa3ad"/>
+        </linearGradient>
+        <linearGradient id="gn" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#3f7340"/><stop offset="50%" stop-color="#1f4d24"/><stop offset="100%" stop-color="#143318"/>
+        </linearGradient>
+        <radialGradient id="bgDim" cx="38%" cy="32%" r="65%">
+          <stop offset="0%" stop-color="rgba(255,255,255,0.7)"/>
+          <stop offset="100%" stop-color="rgba(200,210,220,0.55)"/>
+        </radialGradient>
+        <radialGradient id="bgLit" cx="35%" cy="30%" r="70%">
+          <stop offset="0%" stop-color="#FFE566"/>
+          <stop offset="55%" stop-color="#FFD633"/>
+          <stop offset="100%" stop-color="#F0B820"/>
+        </radialGradient>
+        <!-- Current path: start at battery + (top of left side), clockwise through bulb, switch, back to − -->
+        <path id="currentPath" d="M 120 200
+          L 120 110
+          L 480 110
+          L 840 110
+          L 840 450
+          L 480 450
+          L 120 450
+          L 120 360" fill="none"/>
+      </defs>
+
+      <!-- Soft board frame -->
+      <rect x="36" y="36" width="888" height="488" rx="18" fill="#fffcf5" stroke="#c4bdb0" stroke-width="2"/>
+
+      <!-- Wires (silver) -->
+      <g stroke="#8a929c" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none">
+        <!-- left vertical above battery -->
+        <path d="M120 200 L120 110"/>
+        <!-- top horizontal -->
+        <path d="M120 110 L400 110"/>
+        <path d="M560 110 L840 110"/>
+        <!-- right vertical -->
+        <path d="M840 110 L840 450"/>
+        <!-- bottom horizontal (with switch gap handled visually by switch body) -->
+        <path d="M840 450 L560 450"/>
+        <path d="M400 450 L120 450"/>
+        <!-- left vertical below battery -->
+        <path d="M120 450 L120 360"/>
+      </g>
+      <!-- Wire highlight edge -->
+      <g stroke="#d8dde3" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.85">
+        <path d="M120 200 L120 110 L400 110"/>
+        <path d="M560 110 L840 110 L840 450 L560 450"/>
+        <path d="M400 450 L120 450 L120 360"/>
+      </g>
+
+      <!-- Metal posts at corners -->
+      <g fill="#e8ecef" stroke="#5a626c" stroke-width="1.4">
+        <circle cx="120" cy="110" r="9"/>
+        <circle cx="840" cy="110" r="9"/>
+        <circle cx="840" cy="450" r="9"/>
+        <circle cx="120" cy="450" r="9"/>
+      </g>
+      <g fill="none" stroke="#4a525c" stroke-width="1.6">
+        <circle cx="120" cy="110" r="4"/>
+        <circle cx="840" cy="110" r="4"/>
+        <circle cx="840" cy="450" r="4"/>
+        <circle cx="120" cy="450" r="4"/>
+      </g>
+
+      <!-- ========== BATTERY (left, vertical: + top, − bottom) ========== -->
+      <g id="battery" transform="translate(120 280)">
+        <!-- rotated so copper/+ is at top: draw horizontal battery then rotate -90 around origin... -->
+        <!-- Instead draw vertical body with copper at top -->
+        <rect x="-28" y="-80" width="56" height="160" rx="14" fill="url(#gn)" stroke="#0d2010" stroke-width="1.4"/>
+        <rect x="-28" y="-80" width="56" height="48" rx="14" fill="url(#cu)" stroke="#8a4810" stroke-width="0.8"/>
+        <rect x="-28" y="-36" width="56" height="14" fill="url(#sv)" stroke="#7a828c" stroke-width="0.5"/>
+        <ellipse cx="0" cy="-80" rx="18" ry="7" fill="#c8ccd2" stroke="#707880" stroke-width="1"/>
+        <circle cx="0" cy="-80" r="4" fill="#eef1f4"/>
+        <text x="0" y="-52" text-anchor="middle" font-size="22" font-weight="700" fill="#fff" font-family="PingFang TC, Noto Sans TC, sans-serif">+</text>
+        <text x="0" y="55" text-anchor="middle" font-size="26" font-weight="700" fill="#fff" font-family="PingFang TC, Noto Sans TC, sans-serif">−</text>
+        <!-- terminal stubs connecting to wire -->
+        <rect x="-8" y="-92" width="16" height="14" rx="2" fill="url(#mt)" stroke="#6a727c" stroke-width="1"/>
+        <rect x="-8" y="78" width="16" height="14" rx="2" fill="url(#mt)" stroke="#6a727c" stroke-width="1"/>
+      </g>
+      <text x="168" y="275" font-size="15" font-weight="700" fill="#5c5c5c" font-family="PingFang TC, Noto Sans TC, sans-serif">電池</text>
+
+      <!-- ========== BULB (top center) ========== -->
+      <g id="bulb" transform="translate(480 110)">
+        <!-- side plates / terminals -->
+        <rect x="-90" y="-8" width="42" height="16" rx="2.5" fill="url(#mt)" stroke="#6a727c" stroke-width="1.2"/>
+        <rect x="48" y="-8" width="42" height="16" rx="2.5" fill="url(#mt)" stroke="#6a727c" stroke-width="1.2"/>
+        <ellipse cx="-76" cy="0" rx="7" ry="4.5" fill="#e8ecef" stroke="#5a626c" stroke-width="1.1"/>
+        <ellipse cx="76" cy="0" rx="7" ry="4.5" fill="#e8ecef" stroke="#5a626c" stroke-width="1.1"/>
+        <!-- green board -->
+        <rect x="-40" y="-16" width="80" height="32" rx="4" fill="#3d9a4a" stroke="#2a6e32" stroke-width="1.6"/>
+        <!-- dim bulb -->
+        <g class="bulb-dim">
+          <rect x="-12" y="-24" width="24" height="12" rx="2" fill="#c5cad0" stroke="#6a727c" stroke-width="1"/>
+          <circle cx="0" cy="-42" r="20" fill="url(#bgDim)" stroke="#8895a5" stroke-width="1.5"/>
+          <path d="M-7 -42 Q0 -34 7 -42" fill="none" stroke="#9aa0a8" stroke-width="1.5"/>
+        </g>
+        <!-- lit bulb -->
+        <g class="bulb-glow">
+          <!-- rays -->
+          <line x1="-22" y1="-54" x2="-30" y2="-64" stroke="#F5C518" stroke-width="3" stroke-linecap="round"/>
+          <line x1="-10" y1="-60" x2="-12" y2="-72" stroke="#F5C518" stroke-width="3" stroke-linecap="round"/>
+          <line x1="0" y1="-62" x2="0" y2="-75" stroke="#F5C518" stroke-width="3" stroke-linecap="round"/>
+          <line x1="10" y1="-60" x2="12" y2="-72" stroke="#F5C518" stroke-width="3" stroke-linecap="round"/>
+          <line x1="22" y1="-54" x2="30" y2="-64" stroke="#F5C518" stroke-width="3" stroke-linecap="round"/>
+          <line x1="-28" y1="-42" x2="-40" y2="-46" stroke="#F5C518" stroke-width="3" stroke-linecap="round"/>
+          <line x1="28" y1="-42" x2="40" y2="-46" stroke="#F5C518" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="0" cy="-42" r="21" fill="url(#bgLit)" stroke="#E8C010" stroke-width="0.9"/>
+          <ellipse cx="-7" cy="-50" rx="6" ry="3.5" fill="#fff" opacity="0.85" transform="rotate(-35 -7 -50)"/>
+          <circle cx="2" cy="-52" r="1.8" fill="#fff" opacity="0.75"/>
+          <path d="M-6 -28 V-43 C-6 -52 -0.5 -52 -0.5 -44 C0.5 -52 6 -52 6 -43 V-28" fill="none" stroke="#E09420" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          <rect x="-8" y="-27" width="16" height="12" rx="2" fill="#3A4A5C" stroke="#2A3545" stroke-width="0.7"/>
+          <line x1="-6" y1="-23" x2="6" y2="-23" stroke="#2A3545" stroke-width="1"/>
+          <line x1="-5.5" y1="-19.5" x2="5.5" y2="-19.5" stroke="#2A3545" stroke-width="1"/>
+          <line x1="-4.5" y1="-16.5" x2="4.5" y2="-16.5" stroke="#2A3545" stroke-width="0.9"/>
+        </g>
+      </g>
+      <text x="480" y="58" text-anchor="middle" font-size="15" font-weight="700" fill="#5c5c5c" font-family="PingFang TC, Noto Sans TC, sans-serif">燈泡</text>
+
+      <!-- ========== SWITCH (bottom center) ========== -->
+      <g id="switchGroup" class="sw-hit" role="button" tabindex="0" aria-label="打開開關">
+        <!-- large hit area -->
+        <rect class="hit-area" x="380" y="400" width="200" height="100" rx="12" fill="transparent" stroke="transparent"/>
+        <g id="switch" transform="translate(480 450)">
+          <rect x="-90" y="-10" width="42" height="20" rx="2.5" fill="url(#mt)" stroke="#6a727c" stroke-width="1.2"/>
+          <rect x="48" y="-10" width="42" height="20" rx="2.5" fill="url(#mt)" stroke="#6a727c" stroke-width="1.2"/>
+          <ellipse cx="-76" cy="0" rx="7" ry="5" fill="#e8ecef" stroke="#5a626c" stroke-width="1.1"/>
+          <ellipse cx="76" cy="0" rx="7" ry="5" fill="#e8ecef" stroke="#5a626c" stroke-width="1.1"/>
+          <rect x="-42" y="-18" width="84" height="36" rx="4" fill="#3d9a4a" stroke="#2a6e32" stroke-width="1.6"/>
+          <circle id="swPivot" cx="-18" cy="0" r="4" fill="#8a9098" stroke="#555" stroke-width="0.8"/>
+          <line id="swLever" x1="-18" y1="0" x2="22" y2="-16" stroke="#c0c6cc" stroke-width="4.2" stroke-linecap="round"/>
+          <rect id="swKnob" x="14" y="-24" width="18" height="14" rx="2.5" fill="#1a1a1a" stroke="#000" stroke-width="0.7"/>
+        </g>
+        <text id="swLabel" x="480" y="500" text-anchor="middle" font-size="16" font-weight="700" fill="#a31818" font-family="PingFang TC, Noto Sans TC, sans-serif">關</text>
+      </g>
+
+      <!-- Direction legend (static small) -->
+      <g transform="translate(700 200)" opacity="0.9">
+        <text x="0" y="0" font-size="13" fill="#5c5c5c" font-family="PingFang TC, Noto Sans TC, sans-serif">傳統電流方向</text>
+        <polygon points="0,12 28,12 28,6 40,16 28,26 28,20 0,20" fill="#c45f0a"/>
+      </g>
+
+      <!-- Animated current arrows -->
+      <g class="arrow-layer" id="arrowLayer"></g>
+    </svg>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var closed = false; // false = 關 (open circuit), true = 開 (conducting)
+  var circuit = document.getElementById('circuit');
+  var caption = document.getElementById('caption');
+  var tip = document.getElementById('tip');
+  var swStatus = document.getElementById('swStatus');
+  var btnToggle = document.getElementById('btnToggle');
+  var switchGroup = document.getElementById('switchGroup');
+  var swLever = document.getElementById('swLever');
+  var swKnob = document.getElementById('swKnob');
+  var swLabel = document.getElementById('swLabel');
+  var arrowLayer = document.getElementById('arrowLayer');
+  var pathEl = document.getElementById('currentPath');
+
+  var ARROW_COUNT = 10;
+  var SPEED = 0.10; // path-lengths per second
+  var arrows = [];
+  var pathLen = 0;
+  var raf = 0;
+  var lastTs = 0;
+  var progress = 0; // front of the current wave, starting at battery +
+  var bulbT = 0.23; // fraction along path when current reaches the bulb
+
+  function findBulbT() {
+    if (!pathLen) pathLen = pathEl.getTotalLength();
+    var best = 0, bestD = Infinity;
+    var steps = 240;
+    for (var i = 0; i <= steps; i++) {
+      var len = (i / steps) * pathLen;
+      var pt = pathEl.getPointAtLength(len);
+      var d = (pt.x - 480) * (pt.x - 480) + (pt.y - 110) * (pt.y - 110);
+      if (d < bestD) { bestD = d; best = len / pathLen; }
+    }
+    return best;
+  }
+
+  function setBulbLit(on) {
+    circuit.classList.toggle('is-lit', !!on);
+  }
+
+  function buildArrows() {
+    arrowLayer.innerHTML = '';
+    arrows = [];
+    pathLen = pathEl.getTotalLength();
+    bulbT = findBulbT();
+    for (var i = 0; i < ARROW_COUNT; i++) {
+      var g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      var poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+      // Arrow pointing +x; will be rotated to path tangent
+      poly.setAttribute('points', '-10,-7 12,0 -10,7 -5,0');
+      poly.setAttribute('class', 'arrow-tri');
+      g.appendChild(poly);
+      arrowLayer.appendChild(g);
+      arrows.push({
+        el: g,
+        t: i / ARROW_COUNT // 0..1 along path
+      });
+    }
+  }
+
+  function placeArrow(a) {
+    var len = a.t * pathLen;
+    if (len < 0) len = (len % pathLen + pathLen) % pathLen;
+    if (len >= pathLen) len = len % pathLen;
+    var p1 = pathEl.getPointAtLength(len);
+    var p2 = pathEl.getPointAtLength((len + 4) % pathLen);
+    var ang = Math.atan2(p2.y - p1.y, p2.x - p1.x) * 180 / Math.PI;
+    a.el.setAttribute('transform', 'translate(' + p1.x + ' ' + p1.y + ') rotate(' + ang + ')');
+  }
+
+  function tick(ts) {
+    if (!closed) {
+      raf = 0;
+      lastTs = 0;
+      return;
+    }
+    if (!lastTs) lastTs = ts;
+    var dt = Math.min(0.05, (ts - lastTs) / 1000);
+    lastTs = ts;
+    progress += SPEED * dt;
+    var gap = 1 / ARROW_COUNT;
+    for (var i = 0; i < arrows.length; i++) {
+      var t = progress - i * gap;
+      if (t < 0) {
+        arrows[i].el.style.visibility = 'hidden';
+        continue;
+      }
+      arrows[i].el.style.visibility = 'visible';
+      arrows[i].t = t % 1;
+      placeArrow(arrows[i]);
+    }
+    if (progress >= bulbT && !circuit.classList.contains('is-lit')) {
+      setBulbLit(true);
+      tip.textContent = '電流到達燈泡，燈泡發亮';
+    }
+    raf = requestAnimationFrame(tick);
+  }
+
+  function startArrows() {
+    if (!arrows.length) buildArrows();
+    progress = 0;
+    lastTs = 0;
+    for (var i = 0; i < arrows.length; i++) {
+      arrows[i].el.style.visibility = 'hidden';
+    }
+    if (!raf) raf = requestAnimationFrame(tick);
+  }
+
+  function stopArrows() {
+    if (raf) {
+      cancelAnimationFrame(raf);
+      raf = 0;
+    }
+    lastTs = 0;
+  }
+
+  function setSwitchVisual(isClosed) {
+    if (isClosed) {
+      // lever flat (closed)
+      swLever.setAttribute('x2', '26');
+      swLever.setAttribute('y2', '0');
+      swKnob.setAttribute('x', '18');
+      swKnob.setAttribute('y', '-7');
+      swLabel.textContent = '開';
+      swLabel.setAttribute('fill', '#2d7a38');
+    } else {
+      // lever raised (open)
+      swLever.setAttribute('x2', '22');
+      swLever.setAttribute('y2', '-16');
+      swKnob.setAttribute('x', '14');
+      swKnob.setAttribute('y', '-24');
+      swLabel.textContent = '關';
+      swLabel.setAttribute('fill', '#a31818');
+    }
+  }
+
+  function applyState() {
+    circuit.classList.toggle('is-closed', closed);
+    setSwitchVisual(closed);
+    if (closed) {
+      caption.textContent = '閉合開關後，觀察電流由電池正極出發，經燈泡返回負極。';
+      tip.textContent = '電流正由電池正極沿導線流動；尚未到達燈泡';
+      setBulbLit(false);
+      swStatus.innerHTML = '開關：<span class="on">開</span>';
+      btnToggle.textContent = '關閉開關';
+      btnToggle.setAttribute('aria-label', '關閉開關');
+      btnToggle.classList.remove('is-off');
+      btnToggle.classList.add('is-on');
+      switchGroup.setAttribute('aria-label', '關閉開關');
+      startArrows();
+    } else {
+      caption.textContent = '開關斷開，電路未接通，燈泡不亮，沒有電流。';
+      tip.textContent = '提示：點擊開關或下方按鈕，觀察電流路徑';
+      swStatus.innerHTML = '開關：<span class="off">關</span>';
+      btnToggle.textContent = '打開開關';
+      btnToggle.setAttribute('aria-label', '打開開關');
+      btnToggle.classList.remove('is-on');
+      btnToggle.classList.add('is-off');
+      switchGroup.setAttribute('aria-label', '打開開關');
+      setBulbLit(false);
+      stopArrows();
+    }
+  }
+
+  function toggle() {
+    closed = !closed;
+    applyState();
+  }
+
+  // Pointer Events — avoid double-fire on iPad
+  var lastToggleAt = 0;
+  function onTogglePointer(e) {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    e.preventDefault();
+    var now = Date.now();
+    if (now - lastToggleAt < 280) return;
+    lastToggleAt = now;
+    toggle();
+  }
+
+  btnToggle.addEventListener('pointerdown', onTogglePointer);
+  switchGroup.addEventListener('pointerdown', onTogglePointer);
+  switchGroup.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      toggle();
+    }
+  });
+
+  // Init
+  buildArrows();
+  applyState();
+
+  // Recalc path length on resize (SVG scale doesn't change user units, but safe)
+  window.addEventListener('resize', function () {
+    if (pathEl) pathLen = pathEl.getTotalLength();
+  });
+})();
+</script>
+</body>
+</html>
