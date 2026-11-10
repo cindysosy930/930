@@ -1065,44 +1065,35 @@ function validatePieceConnection(p) {
 }
 
 /**
- * Bulb lights only with a true closed loop:
- * battery +  ↔ conductors/bulbs/closed switches ↔ battery −
- * and this bulb bridges the two sides (current through it).
- * Connection counts only when both ends snap onto the same metal posts.
+ * Bulb lights only with a true closed loop through at least one battery.
+ * Series batteries are part of that path, so they count as conducting edges.
+ * If the two bulb ends already meet with no battery in between, the bulb is shorted and stays off.
+ * Connection counts only when both ends snap onto adjacent metal posts.
  */
 function isBulbLit(bulb) {
   if (!validatePieceConnection(bulb)) return false;
 
-  const batteries = [];
+  let hasBattery = false;
   for (const c of state.pieces) {
-    if (c.type !== 'battery') continue;
-    if (!validatePieceConnection(c)) continue;
-    batteries.push(c);
+    if (c.type === 'battery' && validatePieceConnection(c)) { hasBattery = true; break; }
   }
-  if (!batteries.length) return false;
+  if (!hasBattery) return false;
 
-  // Conductors only (no batteries): strips, other bulbs, closed switches
-  const edges = conductingEdges(bulb.uid, { skipBatteries: true });
-  // Drop any edge whose piece failed validation
-  const clean = [];
-  for (const e of edges) {
-    if (!e.comp.a || !e.comp.b) continue;
-    const pa = getPost(e.comp.a), pb = getPost(e.comp.b);
-    if (!pa || !pb || !areAdjacentPosts(pa, pb)) continue;
-    clean.push(e);
+  function adjFor(skipBatteries) {
+    const edges = conductingEdges(bulb.uid, { skipBatteries: skipBatteries });
+    const clean = [];
+    for (const e of edges) {
+      if (!e.comp.a || !e.comp.b) continue;
+      const pa = getPost(e.comp.a), pb = getPost(e.comp.b);
+      if (!pa || !pb || !areAdjacentPosts(pa, pb)) continue;
+      clean.push(e);
+    }
+    return neighbors(clean);
   }
-  const adj = neighbors(clean);
 
-  for (const bat of batteries) {
-    // Path from each bulb end to battery terminals via conductors only
-    const aToA = canReachPost(bulb.a, bat.a, adj);
-    const aToB = canReachPost(bulb.a, bat.b, adj);
-    const bToA = canReachPost(bulb.b, bat.a, adj);
-    const bToB = canReachPost(bulb.b, bat.b, adj);
-    // Must connect opposite battery poles (＋ side ↔ － side through this bulb)
-    if ((aToA && bToB) || (aToB && bToA)) return true;
-  }
-  return false;
+  const viaBattery = canReachPost(bulb.a, bulb.b, adjFor(false));
+  const noBatteryPath = canReachPost(bulb.a, bulb.b, adjFor(true));
+  return viaBattery && !noBatteryPath;
 }
 
 function updateCircuit() {
