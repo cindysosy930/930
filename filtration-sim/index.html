@@ -1,0 +1,1566 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="format-detection" content="telephone=no" />
+<title>過濾法：濾紙能分開什麼？</title>
+<style>
+  :root {
+    --bg: #f7f3e8;
+    --ink: #2a2a2a;
+    --orange: #e07a20;
+    --orange-dark: #c45f0a;
+    --panel: #fffdf7;
+    --border: #e8dfc8;
+    --shadow: rgba(40, 30, 10, 0.12);
+    --salt: #2b6cb0;
+    --salt-edge: #163e6e;
+    --silt: #c45a2a;
+    --silt-edge: #8a3a16;
+    --sand: #d4b06a;
+    --sand-edge: #7a5a28;
+    --water: #8ec4de;
+    --hit: 44px;
+    --safe-t: env(safe-area-inset-top, 0px);
+    --safe-r: env(safe-area-inset-right, 0px);
+    --safe-b: env(safe-area-inset-bottom, 0px);
+    --safe-l: env(safe-area-inset-left, 0px);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { height: 100%; height: -webkit-fill-available; }
+  html, body {
+    margin: 0; padding: 0;
+    font-family: "PingFang TC", "Noto Sans TC", "Noto Sans CJK TC", "Microsoft JhengHei", "Heiti TC", "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    overflow: hidden;
+    touch-action: manipulation;
+  }
+  body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    min-height: 100dvh;
+    min-height: -webkit-fill-available;
+    padding-top: var(--safe-t);
+    padding-right: var(--safe-r);
+    padding-bottom: var(--safe-b);
+    padding-left: var(--safe-l);
+  }
+  .app {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    height: 100dvh;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+    min-height: 0;
+    position: relative;
+  }
+  header {
+    padding: 6px 12px 2px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  header h1 {
+    margin: 0;
+    font-size: clamp(1rem, 3.2vw, 1.28rem);
+    font-weight: 700;
+    color: var(--orange-dark);
+    line-height: 1.3;
+  }
+  header .sub {
+    margin: 2px 0 0;
+    font-size: clamp(0.68rem, 2vw, 0.8rem);
+    color: #666;
+    line-height: 1.35;
+  }
+  .view-bar {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    padding: 4px 10px 2px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+  .view-chip, .fbtn, .btn {
+    appearance: none;
+    -webkit-appearance: none;
+    font-family: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    touch-action: manipulation;
+    color: var(--ink);
+  }
+  .view-chip {
+    border: 2px solid var(--border);
+    border-radius: 999px;
+    padding: 8px 14px;
+    font-size: clamp(0.74rem, 2.2vw, 0.88rem);
+    min-height: var(--hit);
+    min-width: var(--hit);
+    background: var(--panel);
+    color: #555;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.06);
+  }
+  .view-chip:active, .btn:active, .fbtn:active { transform: translateY(1px); }
+  .view-chip.active {
+    background: linear-gradient(180deg, #f0a020, #d88810);
+    border-color: #c45f0a;
+    color: #fff;
+  }
+  .action-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 10px 6px;
+    flex-shrink: 0;
+  }
+  .btn {
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 8px 16px;
+    font-size: clamp(0.82rem, 2.3vw, 0.95rem);
+    min-height: var(--hit);
+    min-width: var(--hit);
+    background: var(--panel);
+    box-shadow: 0 2px 0 rgba(0,0,0,0.08);
+  }
+  .btn.primary {
+    background: linear-gradient(180deg, #f0a020, #d88810);
+    border-color: #c45f0a;
+    color: #fff;
+  }
+  .btn.primary:disabled {
+    opacity: 0.55;
+    cursor: default;
+    transform: none;
+  }
+  .btn.secondary {
+    background: #fff;
+    border-color: #c9b896;
+  }
+  .speed-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  .speed-group .slabel {
+    font-size: clamp(0.7rem, 2vw, 0.8rem);
+    font-weight: 700;
+    color: #555;
+    padding-left: 4px;
+  }
+  .fbtn {
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: clamp(0.72rem, 2vw, 0.82rem);
+    min-height: var(--hit);
+    min-width: var(--hit);
+    background: var(--panel);
+    color: #555;
+  }
+  .fbtn.active {
+    background: linear-gradient(180deg, #6bb3d9, #3a8fbf);
+    border-color: #2a7aa8;
+    color: #fff;
+  }
+  .canvas-wrap {
+    flex: 1 1 auto;
+    min-height: 0;
+    margin: 2px 8px;
+    background: var(--panel);
+    border: 2px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 4px 16px var(--shadow);
+    position: relative;
+    overflow: hidden;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+  }
+  .legend {
+    display: flex;
+    gap: 10px 14px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 4px 10px 2px;
+    flex-shrink: 0;
+    font-size: clamp(0.7rem, 2vw, 0.82rem);
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+  }
+  .swatch {
+    flex-shrink: 0;
+    border: 1.5px solid rgba(0,0,0,0.2);
+  }
+  .swatch.salt {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--salt);
+    border-color: var(--salt-edge);
+  }
+  .swatch.silt {
+    width: 14px; height: 14px;
+    border-radius: 3px;
+    background: var(--silt);
+    border-color: var(--silt-edge);
+    transform: rotate(18deg);
+  }
+  .swatch.sand {
+    width: 20px; height: 16px;
+    border-radius: 40% 55% 45% 60%;
+    background: var(--sand);
+    border-color: var(--sand-edge);
+  }
+  .tag {
+    font-size: 0.7rem;
+    color: #888;
+    font-weight: 500;
+  }
+  .status {
+    text-align: center;
+    font-size: clamp(0.72rem, 2.1vw, 0.86rem);
+    font-weight: 700;
+    color: var(--orange-dark);
+    padding: 2px 10px 0;
+    flex-shrink: 0;
+    min-height: 1.3em;
+    line-height: 1.4;
+  }
+  .hint {
+    margin: 2px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+    padding: 6px 10px;
+    background: var(--panel);
+    border: 1.5px solid #e8a54b;
+    border-radius: 10px;
+    font-size: clamp(0.68rem, 2vw, 0.8rem);
+    line-height: 1.45;
+    flex-shrink: 0;
+    color: #1a1a1a;
+  }
+  .hint strong { color: var(--orange-dark); }
+  @media (max-height: 560px) {
+    header { padding-top: 2px; padding-bottom: 0; }
+    header .sub { display: none; }
+    .hint { padding: 4px 8px; }
+    .legend { padding-top: 2px; padding-bottom: 0; }
+  }
+  @media (max-width: 600px) {
+    .view-chip { padding: 8px 10px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>過濾法：濾紙能分開什麼？</h1>
+    <p class="sub">示意：鹽水（溶質＝鹽）＋沙（大顆不溶）＋細泥（細小不溶）</p>
+  </header>
+
+  <div class="view-bar" role="tablist" aria-label="視圖">
+    <button type="button" class="view-chip active" data-view="macro" aria-selected="true">宏觀裝置</button>
+    <button type="button" class="view-chip" data-view="mixture" aria-selected="false">放大混合物</button>
+    <button type="button" class="view-chip" data-view="pores" aria-selected="false">放大濾紙孔隙</button>
+    <button type="button" class="view-chip" data-view="filtrate" aria-selected="false">放大濾液</button>
+  </div>
+
+  <div class="action-bar">
+    <button type="button" class="btn primary" id="btnFilter" aria-label="開始過濾">開始過濾</button>
+    <button type="button" class="btn secondary" id="btnReset" aria-label="重置">重置</button>
+    <div class="speed-group" aria-label="速度">
+      <span class="slabel">速度</span>
+      <button type="button" class="fbtn" data-speed="0.55">慢</button>
+      <button type="button" class="fbtn active" data-speed="1">中</button>
+      <button type="button" class="fbtn" data-speed="1.85">快</button>
+    </div>
+  </div>
+
+  <div class="canvas-wrap">
+    <canvas id="cv" aria-label="過濾法課堂模擬動畫"></canvas>
+  </div>
+
+  <div class="legend" id="legend">
+    <span class="legend-item"><span class="swatch salt" aria-hidden="true"></span>鹽粒子（溶質，可溶）</span>
+    <span class="legend-item"><span class="swatch silt" aria-hidden="true"></span>細泥（不溶，細過孔隙）</span>
+    <span class="legend-item"><span class="swatch sand" aria-hidden="true"></span>沙粒（不溶，大過孔隙）</span>
+    <span class="tag">粒子大小為示意，並非真實比例</span>
+  </div>
+
+  <p class="status" id="status">燒杯裡的液體看起來清澈，只有較大的沙粒沉在底部。</p>
+  <div class="hint" id="hint">
+    <strong>課堂重點：</strong>宏觀看來，水入面看似沒東西。按「放大混合物」睇清楚溶質和雜質，再按「開始過濾」觀察濾紙能分開什麼。
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var canvas = document.getElementById('cv');
+  var ctx = canvas.getContext('2d');
+  var btnFilter = document.getElementById('btnFilter');
+  var btnReset = document.getElementById('btnReset');
+  var statusEl = document.getElementById('status');
+  var hintEl = document.getElementById('hint');
+  var viewChips = Array.prototype.slice.call(document.querySelectorAll('.view-chip'));
+  var speedBtns = Array.prototype.slice.call(document.querySelectorAll('.fbtn'));
+
+  var FONT = '"PingFang TC","Noto Sans TC","Noto Sans CJK TC","Microsoft JhengHei",sans-serif';
+
+  var SALT_F = '#2b6cb0', SALT_E = '#163e6e';
+  var SILT_F = '#c45a2a', SILT_E = '#8a3a16';
+  var SAND_F = '#d4b06a', SAND_E = '#7a5a28';
+  var WATER_F = '#8ec4de', WATER_E = '#5a98b8';
+
+  var view = 'macro';
+  var phase = 'start'; // start | filtering | paused | done
+  var progress = 0;
+  var speedMul = 1;
+  var BASE_MS = 8000;
+  var lastTs = 0;
+  var animTime = 0;
+  var dpr = 1, W = 0, H = 0;
+  var layout = null;
+  var particles = [];
+  var waters = [];
+  var reducedMotion = false;
+  var mq = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+
+  function rand(a, b) { return a + Math.random() * (b - a); }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function ease(t) {
+    t = clamp(t, 0, 1);
+    return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+  }
+  function seeded(n) {
+    var x = Math.sin(n * 127.1 + 311.7) * 43758.5453;
+    return x - Math.floor(x);
+  }
+
+  function updateReduced() {
+    reducedMotion = !!(mq && mq.matches);
+  }
+  updateReduced();
+  if (mq) {
+    if (mq.addEventListener) mq.addEventListener('change', updateReduced);
+    else if (mq.addListener) mq.addListener(updateReduced);
+  }
+
+  function durationMs() {
+    return Math.max(2800, BASE_MS / speedMul);
+  }
+
+  function bindTap(el, fn) {
+    var last = 0;
+    el.addEventListener('pointerup', function (e) {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      var now = Date.now();
+      if (now - last < 260) return;
+      last = now;
+      fn(e);
+    });
+    el.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        fn(e);
+      }
+    });
+  }
+
+  function resize() {
+    var rect = canvas.parentElement.getBoundingClientRect();
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = Math.max(280, Math.floor(rect.width));
+    H = Math.max(220, Math.floor(rect.height));
+    canvas.width = Math.floor(W * dpr);
+    canvas.height = Math.floor(H * dpr);
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    buildLayout();
+    draw();
+  }
+
+  function buildLayout() {
+    var pad = Math.max(8, Math.min(W, H) * 0.03);
+    var leftW = W * 0.36;
+    var bW = Math.min(leftW * 0.78, H * 0.42, W * 0.28);
+    var bH = Math.min(H * 0.62, bW * 1.38);
+    var bCx = pad + leftW * 0.62;
+    var bTop = Math.max(pad + 18, (H - bH) * 0.36);
+
+    var kW = Math.min(W * 0.30, H * 0.42, 220);
+    var kH = Math.min(H * 0.50, kW * 1.55);
+    var kCx = W * 0.66;
+    var kTop = H * 0.48;
+    if (kTop + kH > H - 8) {
+      kH = H - 8 - kTop;
+    }
+    var neckH = kH * 0.22;
+    var neckW = kW * 0.32;
+
+    var fCx = kCx;
+    var fTop = Math.max(10, H * 0.05);
+    var stemBottom = kTop + neckH * 0.62;
+    var fW = Math.min(W * 0.34, H * 0.46, 250);
+    var fH = Math.max(80, stemBottom - fTop);
+    var coneH = fH * 0.62;
+    var stemW = Math.max(10, fW * 0.09);
+
+    // Pore scene
+    var paperY = H * 0.42;
+    var paperH = Math.max(36, Math.min(H * 0.11, 58));
+    var paperL = W * 0.14;
+    var paperR = W * 0.86;
+    var poreW = Math.max(28, Math.min(44, (paperR - paperL) * 0.09));
+    var nPores = 4;
+    var holes = [];
+    var usable = paperR - paperL;
+    for (var i = 0; i < nPores; i++) {
+      var hx = paperL + usable * (0.18 + i * 0.21);
+      holes.push({ x: hx, w: poreW, y: paperY, h: paperH });
+    }
+
+    var zoomR = Math.min(W, H) * 0.38;
+    var zoomCx = W * 0.5;
+    var zoomCy = H * 0.50;
+
+    layout = {
+      pad: pad,
+      beaker: { cx: bCx, top: bTop, w: bW, h: bH },
+      funnel: { cx: fCx, top: fTop, w: fW, h: fH, coneH: coneH, stemW: stemW, stemBottom: stemBottom },
+      flask: { cx: kCx, top: kTop, w: kW, h: kH, neckH: neckH, neckW: neckW },
+      paper: { y: paperY, h: paperH, l: paperL, r: paperR, holes: holes, poreW: poreW },
+      zoom: { cx: zoomCx, cy: zoomCy, R: zoomR },
+      sizes: {
+        salt: Math.max(3.6, Math.min(W, H) * 0.011),
+        silt: Math.max(7.5, Math.min(W, H) * 0.022),
+        sand: Math.max(20, Math.min(W, H) * 0.055),
+        water: Math.max(2.6, Math.min(W, H) * 0.008),
+        pore: poreW
+      }
+    };
+
+    // Keep sand clearly larger than pores, silt clearly smaller
+    var s = layout.sizes;
+    s.sand = Math.max(s.sand, layout.paper.poreW * 0.72);
+    s.silt = Math.min(s.silt, layout.paper.poreW * 0.28);
+    s.salt = Math.min(s.salt, s.silt * 0.48);
+  }
+
+  function buildParticles() {
+    particles = [];
+    waters = [];
+    var i, p;
+
+    for (i = 0; i < 28; i++) {
+      var ang = (i * 2.399963229) % (Math.PI * 2);
+      var rad = Math.sqrt((i + 0.4) / 28) * 0.86;
+      p = {
+        type: 'salt',
+        nx: Math.cos(ang) * rad,
+        ny: Math.sin(ang) * rad,
+        phase: rand(0, Math.PI * 2),
+        delay: 0.02 + i * 0.012,
+        seed: i + 1,
+        hole: i % 4,
+        fx: (seeded(i + 40) - 0.5) * 1.6,
+        fy: (seeded(i + 90) - 0.5) * 1.4
+      };
+      particles.push(p);
+    }
+    for (i = 0; i < 10; i++) {
+      ang = (i * 2.199 + 0.4) % (Math.PI * 2);
+      rad = 0.25 + (i % 5) * 0.12;
+      p = {
+        type: 'silt',
+        nx: Math.cos(ang) * rad * 0.85,
+        ny: Math.sin(ang) * rad * 0.7 + 0.08,
+        phase: rand(0, Math.PI * 2),
+        delay: 0.05 + i * 0.03,
+        seed: i + 80,
+        hole: (i + 1) % 4,
+        fx: (seeded(i + 120) - 0.5) * 1.5,
+        fy: (seeded(i + 150) - 0.5) * 1.3,
+        rot: rand(0, Math.PI)
+      };
+      particles.push(p);
+    }
+    // Sand sits lower in the mixture (sediment)
+    var sandSlots = [-0.62, -0.34, -0.08, 0.18, 0.42, 0.66];
+    for (i = 0; i < 6; i++) {
+      p = {
+        type: 'sand',
+        nx: sandSlots[i] * 0.62,
+        ny: 0.50 + (seeded(i + 3) - 0.5) * 0.10,
+        phase: rand(0, Math.PI * 2),
+        delay: 0.06 + i * 0.04,
+        seed: i + 200,
+        trapped: true,
+        restT: 0.20 + (i + 0.5) / 6 * 0.60,
+        fx: 0,
+        fy: 0
+      };
+      particles.push(p);
+    }
+    for (i = 0; i < 32; i++) {
+      ang = (i * 2.399963229 + 1.1) % (Math.PI * 2);
+      rad = Math.sqrt((i + 0.3) / 32) * 0.92;
+      waters.push({
+        nx: Math.cos(ang) * rad,
+        ny: Math.sin(ang) * rad,
+        phase: rand(0, Math.PI * 2),
+        seed: i + 300
+      });
+    }
+  }
+
+  function roundRect(x, y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function pill(text, x, y, anchor, fill, bg) {
+    var fs = Math.max(11, Math.round(Math.min(W, H) * 0.028));
+    ctx.font = 'bold ' + fs + 'px ' + FONT;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    var tw = ctx.measureText(text).width;
+    var padX = 8, h = fs + 10, w = tw + padX * 2;
+    var bx = x;
+    if (anchor === 'center') bx = x - w / 2;
+    else if (anchor === 'right') bx = x - w;
+    var by = y - h / 2;
+    ctx.fillStyle = bg || 'rgba(255,253,247,0.92)';
+    roundRect(bx, by, w, h, 8);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(40,30,10,0.12)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = fill || '#2a2a2a';
+    ctx.fillText(text, bx + padX, y + 0.5);
+  }
+
+  function drawSalt(x, y, r) {
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = SALT_F;
+    ctx.fill();
+    ctx.strokeStyle = SALT_E;
+    ctx.lineWidth = Math.max(1, r * 0.18);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(x - r * 0.28, y - r * 0.28, r * 0.28, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.fill();
+  }
+
+  function drawSilt(x, y, r, rot) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rot || 0);
+    roundRect(-r, -r, r * 2, r * 2, r * 0.22);
+    ctx.fillStyle = SILT_F;
+    ctx.fill();
+    ctx.strokeStyle = SILT_E;
+    ctx.lineWidth = Math.max(1, r * 0.16);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    roundRect(-r * 0.55, -r * 0.55, r * 0.7, r * 0.45, 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawSand(x, y, r, seed) {
+    var n = 8;
+    ctx.beginPath();
+    for (var i = 0; i <= n; i++) {
+      var a = (i / n) * Math.PI * 2;
+      var bump = 0.78 + 0.22 * Math.sin(seed * 1.7 + i * 2.3);
+      var px = x + Math.cos(a + seed * 0.4) * r * bump;
+      var py = y + Math.sin(a + seed * 0.4) * r * bump * 0.88;
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.fillStyle = SAND_F;
+    ctx.fill();
+    ctx.strokeStyle = SAND_E;
+    ctx.lineWidth = Math.max(1.2, r * 0.08);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(x - r * 0.22, y - r * 0.28, r * 0.22, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.28)';
+    ctx.fill();
+  }
+
+  function drawWater(x, y, r, a) {
+    ctx.save();
+    ctx.globalAlpha = a == null ? 0.38 : a;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = WATER_F;
+    ctx.fill();
+    ctx.strokeStyle = WATER_E;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawParticle(p, x, y, scale) {
+    scale = scale || 1;
+    var s = layout.sizes;
+    if (p.type === 'salt') drawSalt(x, y, s.salt * scale);
+    else if (p.type === 'silt') drawSilt(x, y, s.silt * scale, p.rot + (animTime || 0) * 0.00015);
+    else drawSand(x, y, s.sand * scale, p.seed);
+  }
+
+  function glassStroke() {
+    ctx.strokeStyle = '#6e818c';
+    ctx.lineWidth = 2.4;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+  }
+
+  function beakerPath(b, spout) {
+    var x0 = b.cx - b.w / 2;
+    var x1 = b.cx + b.w / 2;
+    var y0 = b.top;
+    var y1 = b.top + b.h;
+    var botR = Math.min(12, b.w * 0.08);
+    ctx.beginPath();
+    ctx.moveTo(x0, y0 + 6);
+    ctx.lineTo(x0, y1 - botR);
+    ctx.quadraticCurveTo(x0, y1, x0 + botR, y1);
+    ctx.lineTo(x1 - botR, y1);
+    ctx.quadraticCurveTo(x1, y1, x1, y1 - botR);
+    ctx.lineTo(x1, y0 + 10);
+    if (spout) {
+      ctx.lineTo(x1 + b.w * 0.015, y0 + 4);
+      ctx.quadraticCurveTo(x1 + b.w * 0.10, y0 - 6, x1 + b.w * 0.16, y0 + 2);
+      ctx.quadraticCurveTo(x1 + b.w * 0.08, y0 + 8, x1, y0 + 10);
+    }
+    ctx.lineTo(x1, y0 + 6);
+  }
+
+  function beakerInner(b) {
+    return {
+      x0: b.cx - b.w / 2 + 3,
+      x1: b.cx + b.w / 2 - 3,
+      y0: b.top + 8,
+      y1: b.top + b.h - 3
+    };
+  }
+
+  function spoutPoint(b, tilt) {
+    var x = b.cx + b.w / 2 + b.w * 0.16;
+    var y = b.top + 2;
+    if (!tilt) return { x: x, y: y };
+    // rotation around base-rightish pivot
+    var px = b.cx + b.w * 0.2;
+    var py = b.top + b.h;
+    var a = tilt * Math.PI / 180;
+    var dx = x - px, dy = y - py;
+    return {
+      x: px + dx * Math.cos(a) - dy * Math.sin(a),
+      y: py + dx * Math.sin(a) + dy * Math.cos(a)
+    };
+  }
+
+  function drawBeaker(b, liquidFrac, tilt, showSandMacro) {
+    ctx.save();
+    var pivotX = b.cx + b.w * 0.2;
+    var pivotY = b.top + b.h;
+    if (tilt) {
+      ctx.translate(pivotX, pivotY);
+      ctx.rotate(tilt * Math.PI / 180);
+      ctx.translate(-pivotX, -pivotY);
+    }
+
+    // Liquid (clipped)
+    var inner = beakerInner(b);
+    var lvl = inner.y1 - (inner.y1 - inner.y0) * clamp(liquidFrac, 0, 1);
+    ctx.save();
+    beakerPath(b, false);
+    ctx.clip();
+    if (liquidFrac > 0.02) {
+      var lg = ctx.createLinearGradient(inner.x0, lvl, inner.x1, inner.y1);
+      lg.addColorStop(0, 'rgba(190, 220, 232, 0.42)');
+      lg.addColorStop(1, 'rgba(160, 200, 218, 0.55)');
+      ctx.fillStyle = lg;
+      ctx.beginPath();
+      ctx.moveTo(inner.x0, lvl + 5);
+      ctx.quadraticCurveTo((inner.x0 + inner.x1) / 2, lvl - 4, inner.x1, lvl + 5);
+      ctx.lineTo(inner.x1, inner.y1);
+      ctx.lineTo(inner.x0, inner.y1);
+      ctx.closePath();
+      ctx.fill();
+    }
+    // Macro sand sediment only (dissolved solute / fine silt invisible)
+    if (showSandMacro && liquidFrac > 0.05) {
+      var sands = particles.filter(function (p) { return p.type === 'sand'; });
+      sands.forEach(function (p, i) {
+        var sx = lerp(inner.x0 + 16, inner.x1 - 16, (i + 0.5) / sands.length);
+        var sy = inner.y1 - 10 - (i % 2) * 7;
+        drawSand(sx, sy, Math.max(7, b.w * 0.065), p.seed);
+      });
+    }
+    ctx.restore();
+
+    // Glass body
+    beakerPath(b, true);
+    ctx.fillStyle = 'rgba(210, 228, 236, 0.12)';
+    ctx.fill();
+    glassStroke();
+    ctx.stroke();
+
+    // Rim
+    ctx.beginPath();
+    ctx.ellipse(b.cx, b.top + 6, b.w / 2, Math.max(4, b.w * 0.06), 0, 0, Math.PI * 2);
+    ctx.strokeStyle = '#5f737e';
+    ctx.lineWidth = 2.2;
+    ctx.stroke();
+
+    // Shine
+    ctx.beginPath();
+    ctx.moveTo(b.cx - b.w * 0.38, b.top + b.h * 0.2);
+    ctx.lineTo(b.cx - b.w * 0.38, b.top + b.h * 0.78);
+    ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+
+    // Ticks
+    ctx.strokeStyle = 'rgba(80,100,110,0.35)';
+    ctx.lineWidth = 1;
+    for (var t = 1; t <= 3; t++) {
+      var ty = b.top + b.h * (0.3 + t * 0.18);
+      ctx.beginPath();
+      ctx.moveTo(b.cx + b.w * 0.28, ty);
+      ctx.lineTo(b.cx + b.w * 0.42, ty);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawFunnel(f, paperWet, residueAmt) {
+    var topY = f.top + 8;
+    var coneBottom = f.top + f.coneH;
+    var left = f.cx - f.w / 2;
+    var right = f.cx + f.w / 2;
+    var stemW = f.stemW;
+    var stemTop = coneBottom;
+    var stemBot = f.stemBottom;
+
+    // Funnel cone + stem fill
+    ctx.beginPath();
+    ctx.moveTo(left, topY);
+    ctx.lineTo(f.cx - stemW / 2, coneBottom);
+    ctx.lineTo(f.cx - stemW / 2, stemBot);
+    ctx.lineTo(f.cx + stemW / 2, stemBot);
+    ctx.lineTo(f.cx + stemW / 2, coneBottom);
+    ctx.lineTo(right, topY);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(200, 222, 232, 0.16)';
+    ctx.fill();
+    glassStroke();
+    ctx.stroke();
+
+    // Filter paper (cone sitting inside)
+    var pL = left + f.w * 0.08;
+    var pR = right - f.w * 0.08;
+    var pTop = topY + 6;
+    var pBot = coneBottom - 4;
+    ctx.beginPath();
+    ctx.moveTo(pL, pTop);
+    // fluted top edge
+    var flaps = 7;
+    for (var i = 1; i <= flaps; i++) {
+      var fx = lerp(pL, pR, i / flaps);
+      var fy = pTop + ((i % 2) ? 5 : 0);
+      ctx.lineTo(fx, fy);
+    }
+    ctx.lineTo(f.cx + 3, pBot);
+    ctx.lineTo(f.cx - 3, pBot);
+    ctx.closePath();
+    ctx.fillStyle = paperWet ? '#efe3c0' : '#f6efd8';
+    ctx.fill();
+    ctx.strokeStyle = '#c9b888';
+    ctx.lineWidth = 1.6;
+    ctx.stroke();
+    // paper texture lines
+    ctx.strokeStyle = 'rgba(160,140,90,0.25)';
+    ctx.lineWidth = 1;
+    for (i = 1; i <= 4; i++) {
+      var t = i / 5;
+      ctx.beginPath();
+      ctx.moveTo(lerp(pL, f.cx - 3, t), lerp(pTop + 4, pBot, t));
+      ctx.lineTo(lerp(pR, f.cx + 3, t), lerp(pTop + 4, pBot, t));
+      ctx.stroke();
+    }
+
+    // Residue mound
+    if (residueAmt > 0.05) {
+      var sands = particles.filter(function (p) { return p.type === 'sand'; });
+      var moundY = lerp(pTop + 28, pBot - 16, 0.35);
+      sands.forEach(function (p, idx) {
+        var sx = f.cx + (idx - (sands.length - 1) / 2) * Math.max(11, f.w * 0.07);
+        var sy = moundY + (idx % 2) * 7 + (1 - residueAmt) * 8;
+        drawSand(sx, sy, Math.max(7, f.w * 0.06), p.seed);
+      });
+    }
+
+    // Rim
+    ctx.beginPath();
+    ctx.moveTo(left - 4, topY);
+    ctx.lineTo(right + 4, topY);
+    ctx.strokeStyle = '#5f737e';
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+  }
+
+  function drawFlask(k, liquidFrac) {
+    var neckW = k.neckW;
+    var neckTop = k.top;
+    var neckBot = k.top + k.neckH;
+    var bodyBot = k.top + k.h;
+    var bodyL = k.cx - k.w / 2;
+    var bodyR = k.cx + k.w / 2;
+    var botR = Math.min(14, k.w * 0.08);
+
+    ctx.beginPath();
+    ctx.moveTo(k.cx - neckW / 2, neckTop + 6);
+    ctx.lineTo(k.cx - neckW / 2, neckBot);
+    ctx.lineTo(bodyL, bodyBot - botR);
+    ctx.quadraticCurveTo(bodyL, bodyBot, bodyL + botR, bodyBot);
+    ctx.lineTo(bodyR - botR, bodyBot);
+    ctx.quadraticCurveTo(bodyR, bodyBot, bodyR, bodyBot - botR);
+    ctx.lineTo(k.cx + neckW / 2, neckBot);
+    ctx.lineTo(k.cx + neckW / 2, neckTop + 6);
+    ctx.fillStyle = 'rgba(200, 222, 232, 0.12)';
+    ctx.fill();
+
+    // Liquid
+    if (liquidFrac > 0.02) {
+      ctx.save();
+      ctx.clip();
+      var fillH = (bodyBot - neckBot) * 0.92 * clamp(liquidFrac, 0, 1);
+      var ly = bodyBot - fillH;
+      var lg = ctx.createLinearGradient(bodyL, ly, bodyR, bodyBot);
+      lg.addColorStop(0, 'rgba(190, 220, 232, 0.42)');
+      lg.addColorStop(1, 'rgba(155, 198, 216, 0.58)');
+      ctx.fillStyle = lg;
+      ctx.beginPath();
+      ctx.moveTo(bodyL - 4, ly + 6);
+      ctx.quadraticCurveTo(k.cx, ly - 5, bodyR + 4, ly + 6);
+      ctx.lineTo(bodyR + 4, bodyBot + 2);
+      ctx.lineTo(bodyL - 4, bodyBot + 2);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // Stroke on top
+    ctx.beginPath();
+    ctx.moveTo(k.cx - neckW / 2, neckTop + 6);
+    ctx.lineTo(k.cx - neckW / 2, neckBot);
+    ctx.lineTo(bodyL, bodyBot - botR);
+    ctx.quadraticCurveTo(bodyL, bodyBot, bodyL + botR, bodyBot);
+    ctx.lineTo(bodyR - botR, bodyBot);
+    ctx.quadraticCurveTo(bodyR, bodyBot, bodyR, bodyBot - botR);
+    ctx.lineTo(k.cx + neckW / 2, neckBot);
+    ctx.lineTo(k.cx + neckW / 2, neckTop + 6);
+    glassStroke();
+    ctx.stroke();
+
+    // Mouth ellipse
+    ctx.beginPath();
+    ctx.ellipse(k.cx, neckTop + 6, neckW / 2 + 1, Math.max(3.5, neckW * 0.16), 0, 0, Math.PI * 2);
+    ctx.strokeStyle = '#5f737e';
+    ctx.lineWidth = 2.2;
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(210,230,238,0.28)';
+    ctx.fill();
+
+    // Shine
+    ctx.beginPath();
+    ctx.moveTo(k.cx - k.w * 0.28, neckBot + k.h * 0.28);
+    ctx.lineTo(k.cx - k.w * 0.38, bodyBot - 16);
+    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+  }
+
+  function pourAmounts() {
+    var pour = ease(clamp((progress - 0.02) / 0.38, 0, 1));
+    var fill = ease(clamp((progress - 0.18) / 0.78, 0, 1));
+    var puddle = 0;
+    if (progress > 0.12 && progress < 0.92) {
+      puddle = Math.sin(clamp((progress - 0.12) / 0.8, 0, 1) * Math.PI) * 0.55;
+    }
+    var tilt = 0;
+    if (phase !== 'start') {
+      if (progress < 0.22) tilt = lerp(0, 32, ease(progress / 0.22));
+      else if (progress < 0.58) tilt = 32;
+      else tilt = lerp(32, 0, ease(clamp((progress - 0.58) / 0.34, 0, 1)));
+    }
+    if (phase === 'start') { pour = 0; fill = 0; puddle = 0; tilt = 0; }
+    return {
+      beaker: lerp(0.70, 0.06, pour),
+      flask: fill * 0.62,
+      puddle: puddle,
+      tilt: tilt,
+      pouring: pour > 0.04 && pour < 0.98,
+      residue: ease(clamp((progress - 0.28) / 0.4, 0, 1))
+    };
+  }
+
+  function drawStream(from, to, on) {
+    if (!on) return;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(150, 198, 216, 0.7)';
+    ctx.lineWidth = 7;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(from.x, from.y);
+    ctx.quadraticCurveTo((from.x + to.x) / 2 + 10, (from.y + to.y) / 2 - 20, to.x, to.y);
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(210, 232, 240, 0.55)';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawDrops(f, amt) {
+    if (amt < 0.05 || progress >= 0.98) return;
+    var t = (animTime || 0) * 0.003;
+    var stemMid = f.cx;
+    var y0 = f.top + f.coneH;
+    var y1 = f.stemBottom + 8;
+    for (var i = 0; i < 3; i++) {
+      var u = (t + i / 3) % 1;
+      var y = lerp(y0, y1, u);
+      ctx.beginPath();
+      ctx.ellipse(stemMid, y, 3.2, 4.4, 0, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(150, 198, 216, ' + (0.75 - u * 0.3) + ')';
+      ctx.fill();
+    }
+  }
+
+  function drawBench() {
+    var y = H - 6;
+    ctx.strokeStyle = '#d8ccb0';
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.moveTo(10, y);
+    ctx.lineTo(W - 10, y);
+    ctx.stroke();
+  }
+
+  function drawMacro() {
+    var a = pourAmounts();
+    var b = layout.beaker;
+    var f = layout.funnel;
+    var k = layout.flask;
+
+    drawBench();
+    drawFlask(k, a.flask);
+    drawFunnel(f, a.residue > 0.1 || a.puddle > 0.1, a.residue);
+
+    var funnelMouth = { x: f.cx - f.w * 0.12, y: f.top + 10 };
+    var sp = spoutPoint(b, a.tilt);
+    if (a.pouring) drawStream(sp, funnelMouth, true);
+
+    // Sand in transit along stream (macro only, visible grains)
+    if (progress > 0.08 && progress < 0.45) {
+      var sands = particles.filter(function (p) { return p.type === 'sand'; });
+      sands.forEach(function (p, i) {
+        var local = clamp((progress - 0.08 - i * 0.03) / 0.28, 0, 1);
+        if (local <= 0 || local >= 1) return;
+        var e = ease(local);
+        var mx = (sp.x + funnelMouth.x) / 2 + 10;
+        var my = (sp.y + funnelMouth.y) / 2 - 20;
+        var x = (1 - e) * (1 - e) * sp.x + 2 * (1 - e) * e * mx + e * e * funnelMouth.x;
+        var y = (1 - e) * (1 - e) * sp.y + 2 * (1 - e) * e * my + e * e * funnelMouth.y;
+        drawSand(x, y, Math.max(6, b.w * 0.055), p.seed);
+      });
+    }
+
+    var sandStillInBeaker = progress < 0.12;
+    drawBeaker(b, a.beaker, a.tilt, sandStillInBeaker);
+    drawDrops(f, a.flask);
+
+    pill('混合物', b.cx, b.top - 14, 'center', '#2a2a2a');
+    pill('濾紙', f.cx + f.w * 0.42, f.top + f.coneH * 0.42, 'left', '#7a5a20');
+    if (a.residue > 0.35) {
+      pill('殘渣', f.cx - f.w * 0.42, f.top + f.coneH * 0.28, 'right', '#7a5a28');
+    }
+    if (a.flask > 0.12) {
+      pill('濾液', k.cx + k.w * 0.52, k.top + k.h * 0.72, 'left', '#2a6a88');
+    } else {
+      pill('錐形瓶', k.cx + k.w * 0.52, k.top + k.h * 0.62, 'left', '#555');
+    }
+  }
+
+  function zoomJitter(p, amp) {
+    var t = animTime || 0;
+    if (reducedMotion) return { x: 0, y: 0 };
+    return {
+      x: Math.sin(t * 0.0022 + p.phase) * amp,
+      y: Math.cos(t * 0.0018 + p.phase * 1.3) * amp * 0.8
+    };
+  }
+
+  function drawZoomFrame(title, captionY) {
+    var z = layout.zoom;
+    ctx.beginPath();
+    ctx.arc(z.cx, z.cy, z.R, 0, Math.PI * 2);
+    var lg = ctx.createRadialGradient(z.cx - z.R * 0.2, z.cy - z.R * 0.2, z.R * 0.1, z.cx, z.cy, z.R);
+    lg.addColorStop(0, 'rgba(210, 232, 242, 0.55)');
+    lg.addColorStop(1, 'rgba(176, 210, 224, 0.7)');
+    ctx.fillStyle = lg;
+    ctx.fill();
+    ctx.strokeStyle = '#c45f0a';
+    ctx.lineWidth = 4;
+    ctx.stroke();
+    // handle of magnifier
+    ctx.beginPath();
+    ctx.moveTo(z.cx + z.R * 0.72, z.cy + z.R * 0.72);
+    ctx.lineTo(z.cx + z.R * 1.12, z.cy + z.R * 1.08);
+    ctx.strokeStyle = '#c45f0a';
+    ctx.lineWidth = 8;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+    ctx.strokeStyle = '#8a4308';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    pill(title, z.cx, z.cy - z.R - 16, 'center', '#c45f0a');
+    if (captionY) pill(captionY, z.cx, z.cy + z.R + 18, 'center', '#555');
+  }
+
+  function clipZoom() {
+    var z = layout.zoom;
+    ctx.beginPath();
+    ctx.arc(z.cx, z.cy, z.R - 3, 0, Math.PI * 2);
+    ctx.clip();
+  }
+
+  function mapZoom(nx, ny) {
+    var z = layout.zoom;
+    return { x: z.cx + nx * z.R * 0.82, y: z.cy + ny * z.R * 0.82 };
+  }
+
+  function drawMixtureZoom() {
+    var z = layout.zoom;
+    drawZoomFrame('混合物（放大）', '');
+    ctx.save();
+    clipZoom();
+    waters.forEach(function (w) {
+      var j = zoomJitter(w, 2.2);
+      var pt = mapZoom(w.nx, w.ny);
+      drawWater(pt.x + j.x, pt.y + j.y, layout.sizes.water, 0.32);
+    });
+    // salt (dissolved, free motion), silt (suspended), sand (settled)
+    particles.forEach(function (p) {
+      var amp = p.type === 'salt' ? 4.5 : (p.type === 'silt' ? 2.2 : 0.4);
+      var j = zoomJitter(p, amp);
+      var pt = mapZoom(p.nx, p.ny);
+      drawParticle(p, pt.x + j.x, pt.y + j.y, p.type === 'sand' ? 0.84 : 1);
+    });
+    ctx.restore();
+  }
+
+  function poreRestX(p) {
+    var paper = layout.paper;
+    var holes = paper.holes;
+    // Place sand on fibers between / beside pores, never in a hole
+    var x = lerp(paper.l + 24, paper.r - 24, p.restT);
+    holes.forEach(function (h) {
+      var half = h.w / 2 + layout.sizes.sand * 0.85;
+      if (Math.abs(x - h.x) < half) {
+        x = x < h.x ? h.x - half : h.x + half;
+      }
+    });
+    return clamp(x, paper.l + 18, paper.r - 18);
+  }
+
+  function particlePorePos(p, t) {
+    var paper = layout.paper;
+    var holes = paper.holes;
+    var local = ease(clamp((t - p.delay) / 0.72, 0, 1));
+    var startY = 58 + seeded(p.seed) * Math.max(20, paper.y * 0.28);
+    var startX = lerp(paper.l + 28, paper.r - 28, seeded(p.seed + 5));
+
+    if (p.type === 'sand') {
+      var rx = poreRestX(p);
+      var ry = paper.y - layout.sizes.sand * 0.55;
+      var e = ease(clamp((t - p.delay) / 0.5, 0, 1));
+      return { x: lerp(startX, rx, e), y: lerp(startY, ry, e), visible: t > 0.02 || phase !== 'start' };
+    }
+
+    var hole = holes[p.hole];
+    var gateX = hole.x + (seeded(p.seed + 8) - 0.5) * hole.w * 0.35;
+    var midY = paper.y + paper.h * 0.5;
+    var endY = H * 0.78 + p.fy * 18;
+    var endX = lerp(W * 0.28, W * 0.72, (seeded(p.seed + 11)));
+
+    var x, y;
+    if (local < 0.28) {
+      var u = local / 0.28;
+      x = lerp(startX, gateX, u);
+      y = lerp(startY, paper.y - 8, u);
+    } else if (local < 0.5) {
+      var u2 = (local - 0.28) / 0.22;
+      x = gateX;
+      y = lerp(paper.y - 8, paper.y + paper.h + 8, u2);
+    } else {
+      var u3 = (local - 0.5) / 0.5;
+      x = lerp(gateX, endX, u3);
+      y = lerp(paper.y + paper.h + 8, endY, u3);
+    }
+    return { x: x, y: y, visible: true, through: local >= 0.5 };
+  }
+
+  function drawPores() {
+    var paper = layout.paper;
+    var f = layout.funnel;
+
+    var wallTop = 48;
+    // Funnel walls (schematic) — start below the size banner
+    ctx.beginPath();
+    ctx.moveTo(W * 0.08, wallTop);
+    ctx.lineTo(paper.l - 8, paper.y);
+    ctx.lineTo(paper.l - 8, paper.y + paper.h + 8);
+    ctx.lineTo(W * 0.38, H * 0.92);
+    ctx.moveTo(W * 0.92, wallTop);
+    ctx.lineTo(paper.r + 8, paper.y);
+    ctx.lineTo(paper.r + 8, paper.y + paper.h + 8);
+    ctx.lineTo(W * 0.62, H * 0.92);
+    glassStroke();
+    ctx.strokeStyle = '#7a8c96';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // Incoming mixture water
+    ctx.fillStyle = 'rgba(185, 218, 230, 0.28)';
+    ctx.beginPath();
+    ctx.moveTo(W * 0.12, wallTop + 2);
+    ctx.lineTo(paper.l, paper.y);
+    ctx.lineTo(paper.r, paper.y);
+    ctx.lineTo(W * 0.88, wallTop + 2);
+    ctx.closePath();
+    ctx.fill();
+
+    // Filtrate collection water (appears as filtration proceeds)
+    var fillA = phase === 'start' ? 0.06 : lerp(0.08, 0.45, ease(clamp((progress - 0.35) / 0.55, 0, 1)));
+    ctx.fillStyle = 'rgba(185, 218, 230, ' + fillA + ')';
+    ctx.beginPath();
+    ctx.moveTo(paper.l, paper.y + paper.h);
+    ctx.lineTo(W * 0.38, H * 0.92);
+    ctx.lineTo(W * 0.62, H * 0.92);
+    ctx.lineTo(paper.r, paper.y + paper.h);
+    ctx.closePath();
+    ctx.fill();
+
+    // Paper body
+    ctx.fillStyle = '#efe3c0';
+    ctx.fillRect(paper.l, paper.y, paper.r - paper.l, paper.h);
+    // fibers
+    ctx.strokeStyle = 'rgba(140, 120, 70, 0.35)';
+    ctx.lineWidth = 1.2;
+    var fy;
+    for (fy = paper.y + 4; fy < paper.y + paper.h; fy += 5) {
+      ctx.beginPath();
+      ctx.moveTo(paper.l, fy + Math.sin(fy) * 1.2);
+      ctx.lineTo(paper.r, fy + Math.cos(fy) * 1.2);
+      ctx.stroke();
+    }
+    for (var fx = paper.l; fx < paper.r; fx += 9) {
+      ctx.beginPath();
+      ctx.moveTo(fx, paper.y);
+      ctx.lineTo(fx + 4, paper.y + paper.h);
+      ctx.stroke();
+    }
+
+    // Cut pores clearly
+    paper.holes.forEach(function (h) {
+      var rx = h.w / 2;
+      var ry = h.h * 0.38;
+      ctx.save();
+      ctx.globalCompositeOperation = 'destination-out';
+      // We'll punch visually by painting the "gap" with the bg showing through — use pale water instead
+      ctx.restore();
+      ctx.beginPath();
+      ctx.ellipse(h.x, h.y + h.h / 2, rx, ry, 0, 0, Math.PI * 2);
+      ctx.fillStyle = progress > 0.2 ? 'rgba(170, 210, 225, 0.95)' : 'rgba(247, 243, 232, 0.96)';
+      ctx.fill();
+      ctx.strokeStyle = '#8a6a30';
+      ctx.lineWidth = 2.2;
+      ctx.stroke();
+    });
+
+    // Paper outline
+    ctx.strokeStyle = '#b89a5a';
+    ctx.lineWidth = 2.4;
+    ctx.strokeRect(paper.l, paper.y, paper.r - paper.l, paper.h);
+
+    pill('濾紙', paper.l - 12, paper.y + paper.h / 2, 'right', '#7a5a20');
+    if (paper.holes[0]) {
+      pill('孔隙', paper.holes[0].x - paper.holes[0].w * 0.9, paper.y + paper.h + 24, 'right', '#2a6a88');
+    }
+
+    // Size comparison strip (banner, above funnel walls)
+    var cmpY = 22;
+    var s = layout.sizes;
+    ctx.fillStyle = 'rgba(255,253,247,0.96)';
+    ctx.strokeStyle = 'rgba(40,30,10,0.12)';
+    ctx.lineWidth = 1;
+    roundRect(8, 6, W - 16, 32, 8);
+    ctx.fill();
+    ctx.stroke();
+    ctx.font = 'bold 12px ' + FONT;
+    ctx.fillStyle = '#555';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    var cx = 18;
+    ctx.fillText('示意大小', cx, cmpY);
+    cx += 64;
+    drawSalt(cx, cmpY, Math.max(4, s.salt));
+    ctx.fillStyle = '#555';
+    ctx.fillText('鹽', cx + 10, cmpY);
+    cx += 28;
+    ctx.fillText('<', cx, cmpY);
+    cx += 16;
+    drawSilt(cx, cmpY, Math.min(s.silt, 8), 0.3);
+    ctx.fillStyle = '#555';
+    ctx.fillText('細泥', cx + 12, cmpY);
+    cx += 42;
+    ctx.fillText('<', cx, cmpY);
+    cx += 16;
+    ctx.beginPath();
+    ctx.ellipse(cx + 14, cmpY, 14, 7, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(170,210,225,0.9)';
+    ctx.fill();
+    ctx.strokeStyle = '#8a6a30';
+    ctx.lineWidth = 1.6;
+    ctx.stroke();
+    ctx.fillStyle = '#555';
+    ctx.fillText('孔隙', cx + 32, cmpY);
+    cx += 68;
+    ctx.fillText('<', cx, cmpY);
+    cx += 16;
+    drawSand(cx + 8, cmpY, 11, 3);
+    ctx.fillStyle = '#555';
+    ctx.fillText('沙', cx + 24, cmpY);
+
+    // Particles
+    var tShow = phase === 'start' ? 0 : progress;
+    // If teacher opens this view before filtering, park particles above the paper
+    particles.forEach(function (p) {
+      var pos;
+      if (phase === 'start' && progress < 0.01) {
+        var startY = wallTop + 16 + seeded(p.seed) * Math.max(24, paper.y - wallTop - 50);
+        var startX = lerp(paper.l + 28, paper.r - 28, seeded(p.seed + 5));
+        if (p.type === 'sand') {
+          startY = paper.y - 36 - seeded(p.seed) * 10;
+        }
+        pos = { x: startX, y: startY, visible: true };
+      } else {
+        pos = particlePorePos(p, tShow);
+      }
+      if (!pos.visible) return;
+      var j = zoomJitter(p, p.type === 'salt' ? 1.6 : (p.type === 'silt' ? 1.0 : 0.2));
+      drawParticle(p, pos.x + j.x, pos.y + j.y, 1);
+    });
+
+    if (progress > 0.35) {
+      pill('殘渣', paper.r + 12, paper.y + paper.h / 2, 'left', '#7a5a28');
+      if (progress > 0.55) pill('濾液', W * 0.5, H * 0.88, 'center', '#2a6a88');
+    }
+
+    // Flow arrows through pores during filtering
+    if (phase === 'filtering' || (phase === 'paused' && progress > 0.15 && progress < 0.9) || (phase === 'done' && progress < 0.99)) {
+      if (progress > 0.18 && progress < 0.9) {
+        paper.holes.forEach(function (h, i) {
+          var bob = ((animTime || 0) * 0.004 + i) % 1;
+          var ay = paper.y + paper.h * 0.15 + bob * paper.h * 0.7;
+          ctx.beginPath();
+          ctx.moveTo(h.x - 4, ay - 5);
+          ctx.lineTo(h.x, ay + 4);
+          ctx.lineTo(h.x + 4, ay - 5);
+          ctx.strokeStyle = 'rgba(42,106,136,0.55)';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        });
+      }
+    }
+  }
+
+  function drawFiltrateZoom() {
+    var z = layout.zoom;
+    var ready = progress >= 0.45 || phase === 'done';
+    drawZoomFrame('濾液（放大）', ready ? '' : '');
+    ctx.save();
+    clipZoom();
+    if (!ready && phase === 'start') {
+      ctx.fillStyle = 'rgba(230, 236, 240, 0.5)';
+      ctx.fill();
+    } else {
+      waters.forEach(function (w) {
+        var j = zoomJitter(w, 2.2);
+        var pt = mapZoom(w.nx, w.ny);
+        drawWater(pt.x + j.x, pt.y + j.y, layout.sizes.water, 0.32);
+      });
+      particles.forEach(function (p) {
+        if (p.type === 'sand') return; // never in filtrate
+        var passed = phase === 'start' ? false : ease(clamp((progress - p.delay - 0.35) / 0.4, 0, 1));
+        if (phase === 'done') passed = 1;
+        if (passed <= 0.02) return;
+        var amp = p.type === 'salt' ? 4.5 : 2.2;
+        var j = zoomJitter(p, amp);
+        var pt = mapZoom(p.nx * 0.9, p.ny * 0.9);
+        ctx.globalAlpha = passed;
+        drawParticle(p, pt.x + j.x, pt.y + j.y, 1);
+        ctx.globalAlpha = 1;
+      });
+    }
+    ctx.restore();
+
+    if (!ready && phase === 'start') {
+      pill('尚未過濾，請先按「開始過濾」', z.cx, z.cy, 'center', '#c45f0a');
+    }
+  }
+
+  function setTexts() {
+    var hint, status;
+    if (view === 'mixture') {
+      status = '宏觀看起來清澄的液體，放大後可見溶質和雜質粒子。';
+      hint = '<strong>放大混合物：</strong>鹽（溶質）已溶解，自由游動；細泥不溶但體積細；沙粒不溶且較大，沉在底部。粒子大小為示意，並非真實比例。';
+    } else if (view === 'pores') {
+      if (phase === 'start') {
+        status = '濾紙上有明顯孔隙。按「開始過濾」觀察哪些粒子能穿過。';
+        hint = '<strong>放大濾紙孔隙：</strong>對比大小——鹽和細泥細過孔隙，沙粒大過孔隙。大粒子絕不會穿過去。';
+      } else if (phase === 'done') {
+        status = '沙粒被截留成為殘渣；溶質和細泥已穿過濾紙，進入濾液。';
+        hint = '<strong>過濾結果：</strong>大過孔隙的不溶雜質成為<strong>殘渣</strong>；溶質和細過孔隙的不溶雜質進入<strong>濾液</strong>。';
+      } else {
+        status = '沙粒卡在孔隙之上；鹽粒子和細泥正隨水穿過濾紙。';
+        hint = '<strong>觀察重點：</strong>溶質一定穿過。細泥雖不溶，但細過孔隙，同樣穿過。沙粒大過孔隙，留下做殘渣。';
+      }
+    } else if (view === 'filtrate') {
+      if (phase === 'start') {
+        status = '尚未過濾。請先按「開始過濾」，再觀察濾液。';
+        hint = '<strong>濾液：</strong>過濾完成後，放大濾液會見到仍有溶質（也可能有細泥），但沒有大顆沙粒。';
+      } else {
+        status = '濾液仍然含有溶質，過濾不能分離已溶解的物質。細過孔隙的不溶雜質也會穿過濾紙。';
+        hint = '<strong>課堂重點：</strong>濾液看起來可以是清澈的，但並非純水。過濾<strong>不能</strong>分開已溶解的溶質；細過孔隙的不溶雜質也會穿過。';
+      }
+    } else {
+      // macro
+      if (phase === 'start') {
+        status = '燒杯裡的液體看起來清澈，只有較大的沙粒沉在底部。';
+        hint = '<strong>課堂重點：</strong>宏觀看來，水入面看似沒東西。按「放大混合物」睇清楚溶質和雜質，再按「開始過濾」觀察濾紙能分開什麼。';
+      } else if (phase === 'done') {
+        status = '濾紙上留下殘渣（沙）；濾液看起來清澈，但並非純水。';
+        hint = '<strong>宏觀結果：</strong>殘渣留在濾紙上。濾液清澈，並不代表它是純水——按「放大濾液」確認仍有溶質。';
+      } else {
+        status = '正在把混合物倒入漏斗。可按「放大濾紙孔隙」觀察粒子能否穿過。';
+        hint = '<strong>過濾中：</strong>液體經濾紙流入錐形瓶，成為濾液。大顆沙粒會留在濾紙上，成為殘渣。';
+      }
+    }
+    statusEl.textContent = status;
+    hintEl.innerHTML = hint;
+  }
+
+  function syncFilterButton() {
+    if (phase === 'filtering') {
+      btnFilter.textContent = '暫停';
+      btnFilter.setAttribute('aria-label', '暫停');
+      btnFilter.disabled = false;
+    } else if (phase === 'paused') {
+      btnFilter.textContent = '繼續過濾';
+      btnFilter.setAttribute('aria-label', '繼續過濾');
+      btnFilter.disabled = false;
+    } else if (phase === 'done') {
+      btnFilter.textContent = '已完成';
+      btnFilter.setAttribute('aria-label', '已完成過濾');
+      btnFilter.disabled = true;
+    } else {
+      btnFilter.textContent = '開始過濾';
+      btnFilter.setAttribute('aria-label', '開始過濾');
+      btnFilter.disabled = false;
+    }
+  }
+
+  function setView(v) {
+    view = v;
+    viewChips.forEach(function (c) {
+      var on = c.getAttribute('data-view') === view;
+      c.classList.toggle('active', on);
+      c.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    setTexts();
+    draw();
+  }
+
+  function setProgress(p) {
+    progress = clamp(p, 0, 1);
+    if (progress >= 1) {
+      progress = 1;
+      phase = 'done';
+      lastTs = 0;
+    }
+    syncFilterButton();
+    setTexts();
+    draw();
+  }
+
+  function draw() {
+    if (!layout) return;
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#fffdf7';
+    ctx.fillRect(0, 0, W, H);
+    if (view === 'macro') drawMacro();
+    else if (view === 'mixture') drawMixtureZoom();
+    else if (view === 'pores') drawPores();
+    else drawFiltrateZoom();
+  }
+
+  function tick(ts) {
+    animTime = ts;
+    if (phase === 'filtering') {
+      if (!lastTs) lastTs = ts;
+      var next = progress + (ts - lastTs) / durationMs();
+      lastTs = ts;
+      if (next >= 1) {
+        setProgress(1);
+        requestAnimationFrame(function (t) { animTime = t; draw(); });
+        return;
+      }
+      setProgress(next);
+    } else {
+      lastTs = 0;
+      draw();
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function startFilter() {
+    if (phase === 'done') return;
+    if (phase === 'start') {
+      if (reducedMotion) {
+        phase = 'done';
+        setProgress(1);
+        return;
+      }
+      phase = 'filtering';
+      lastTs = 0;
+      syncFilterButton();
+      setTexts();
+      return;
+    }
+    if (phase === 'paused') {
+      if (reducedMotion) {
+        phase = 'done';
+        setProgress(1);
+        return;
+      }
+      phase = 'filtering';
+      lastTs = 0;
+      syncFilterButton();
+      setTexts();
+    }
+  }
+
+  function pauseFilter() {
+    if (phase !== 'filtering') return;
+    phase = 'paused';
+    lastTs = 0;
+    syncFilterButton();
+    setTexts();
+    draw();
+  }
+
+  function resetAll() {
+    phase = 'start';
+    progress = 0;
+    lastTs = 0;
+    buildParticles();
+    setView(view); // keep current? Brief says 重置 to start over — go back to macro
+    setView('macro');
+    syncFilterButton();
+    setTexts();
+    draw();
+  }
+
+  bindTap(btnFilter, function () {
+    if (phase === 'filtering') pauseFilter();
+    else startFilter();
+  });
+  bindTap(btnReset, resetAll);
+  viewChips.forEach(function (chip) {
+    bindTap(chip, function () { setView(chip.getAttribute('data-view')); });
+  });
+  speedBtns.forEach(function (btn) {
+    bindTap(btn, function () {
+      speedBtns.forEach(function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      speedMul = Number(btn.getAttribute('data-speed'));
+    });
+  });
+
+  window.addEventListener('resize', resize);
+  if (window.ResizeObserver) {
+    new ResizeObserver(function () { resize(); }).observe(canvas.parentElement);
+  }
+
+  window.__filtrationSim = {
+    setView: setView,
+    setProgress: function (p) {
+      if (p >= 1) phase = 'done';
+      else if (p <= 0) phase = 'start';
+      else phase = 'paused';
+      setProgress(p);
+    },
+    getState: function () { return { view: view, phase: phase, progress: progress, W: W, H: H }; }
+  };
+
+  buildParticles();
+  resize();
+  setTexts();
+  syncFilterButton();
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
