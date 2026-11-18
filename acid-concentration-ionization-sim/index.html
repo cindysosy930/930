@@ -1,0 +1,2123 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="format-detection" content="telephone=no" />
+<title>濃酸與稀酸、強酸與弱酸</title>
+<style>
+  :root {
+    --bg: #f7f3e8;
+    --ink: #2a2a2a;
+    --orange: #e07a20;
+    --orange-dark: #c45f0a;
+    --panel: #fffdf7;
+    --border: #e8dfc8;
+    --shadow: rgba(40, 30, 10, 0.12);
+    --water: #8ec4de;
+    --water-edge: #5a98b8;
+    --acid: #1c8a78;
+    --acid-edge: #0f5c50;
+    --hplus: #d94a5c;
+    --hplus-edge: #9a2030;
+    --chloride: #1c8a78;
+    --acetate: #c47a2a;
+    --acetate-edge: #8a5216;
+    --hcl-h: #f0d0d4;
+    --acetic: #6b5b95;
+    --acetic-edge: #43366a;
+    --hit: 44px;
+    --safe-t: env(safe-area-inset-top, 0px);
+    --safe-r: env(safe-area-inset-right, 0px);
+    --safe-b: env(safe-area-inset-bottom, 0px);
+    --safe-l: env(safe-area-inset-left, 0px);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { height: 100%; height: -webkit-fill-available; }
+  html, body {
+    margin: 0; padding: 0;
+    font-family: "PingFang TC", "Noto Sans TC", "Noto Sans CJK TC", "Microsoft JhengHei", "Heiti TC", "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    overflow: hidden;
+    touch-action: manipulation;
+  }
+  body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    min-height: 100dvh;
+    min-height: -webkit-fill-available;
+    padding-top: var(--safe-t);
+    padding-right: var(--safe-r);
+    padding-bottom: var(--safe-b);
+    padding-left: var(--safe-l);
+  }
+  .app {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    height: 100dvh;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+    min-height: 0;
+    position: relative;
+    overflow: hidden;
+  }
+  header {
+    padding: 6px 12px 2px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  header h1 {
+    margin: 0;
+    font-size: clamp(1rem, 3.2vw, 1.28rem);
+    font-weight: 700;
+    color: var(--orange-dark);
+    line-height: 1.3;
+  }
+  header .sub {
+    margin: 2px 0 0;
+    font-size: clamp(0.68rem, 2vw, 0.8rem);
+    color: #666;
+    line-height: 1.35;
+  }
+  .view-bar {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    padding: 4px 10px 2px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+  .view-chip, .fbtn, .btn, .acid-chip, .conc-chip {
+    appearance: none;
+    -webkit-appearance: none;
+    font-family: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    touch-action: manipulation;
+    color: var(--ink);
+  }
+  .view-chip, .acid-chip, .conc-chip {
+    border: 2px solid var(--border);
+    border-radius: 999px;
+    padding: 8px 14px;
+    font-size: clamp(0.74rem, 2.2vw, 0.88rem);
+    min-height: var(--hit);
+    min-width: var(--hit);
+    background: var(--panel);
+    color: #555;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.06);
+  }
+  .view-chip:active, .btn:active, .fbtn:active, .acid-chip:active, .conc-chip:active { transform: translateY(1px); }
+  .view-chip.active {
+    background: linear-gradient(180deg, #f0a020, #d88810);
+    border-color: #c45f0a;
+    color: #fff;
+  }
+  .acid-chip.active {
+    background: linear-gradient(180deg, #3aa38a, #1e7a68);
+    border-color: #0f5c50;
+    color: #fff;
+  }
+  .conc-chip.active {
+    background: linear-gradient(180deg, #6bb3d9, #3a8fbf);
+    border-color: #2a7aa8;
+    color: #fff;
+  }
+  .view-chip:focus-visible, .btn:focus-visible, .fbtn:focus-visible, .acid-chip:focus-visible, .conc-chip:focus-visible {
+    outline: 3px solid #e07a20;
+    outline-offset: 2px;
+  }
+  .action-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 10px 6px;
+    flex-shrink: 0;
+  }
+  .btn {
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 8px 16px;
+    font-size: clamp(0.82rem, 2.3vw, 0.95rem);
+    min-height: var(--hit);
+    min-width: var(--hit);
+    background: var(--panel);
+    box-shadow: 0 2px 0 rgba(0,0,0,0.08);
+  }
+  .btn.primary {
+    background: linear-gradient(180deg, #f0a020, #d88810);
+    border-color: #c45f0a;
+    color: #fff;
+  }
+  .btn.primary:disabled, .btn.secondary:disabled, .btn:disabled {
+    opacity: 0.55;
+    cursor: default;
+    transform: none;
+  }
+  .btn.secondary {
+    background: #fff;
+    border-color: #c9b896;
+  }
+  .speed-group, .acid-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  .slabel {
+    font-size: clamp(0.7rem, 2vw, 0.8rem);
+    font-weight: 700;
+    color: #555;
+    padding-left: 4px;
+  }
+  .fbtn {
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: clamp(0.72rem, 2vw, 0.82rem);
+    min-height: var(--hit);
+    min-width: var(--hit);
+    background: var(--panel);
+    color: #555;
+  }
+  .fbtn.active {
+    background: linear-gradient(180deg, #6bb3d9, #3a8fbf);
+    border-color: #2a7aa8;
+    color: #fff;
+  }
+  .hidden { display: none !important; }
+  .sides {
+    display: flex;
+    gap: 8px;
+    padding: 0 8px 4px;
+    flex-shrink: 0;
+    min-width: 0;
+  }
+  .side {
+    flex: 1 1 0;
+    min-width: 0;
+    background: var(--panel);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 6px 8px 8px;
+    box-shadow: 0 2px 8px var(--shadow);
+  }
+  .side h2 {
+    margin: 0 0 4px;
+    font-size: clamp(0.78rem, 2.2vw, 0.95rem);
+    font-weight: 800;
+    color: var(--orange-dark);
+    line-height: 1.3;
+  }
+  .count-row {
+    font-size: clamp(0.76rem, 2.1vw, 0.9rem);
+    font-weight: 700;
+    color: #333;
+    line-height: 1.4;
+  }
+  .count-row strong { font-size: 1.15em; color: var(--acid-edge); }
+  .compare-badge {
+    display: inline-block;
+    margin: 4px 0 6px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-weight: 800;
+    font-size: clamp(0.7rem, 2vw, 0.82rem);
+    line-height: 1.4;
+  }
+  .compare-badge.none { background: #eeeae0; color: #555; }
+  .compare-badge.conc { background: #fde8c8; color: #8a4b00; }
+  .compare-badge.dil { background: #dceef8; color: #1a5678; }
+  .compare-badge.same { background: #d8efe4; color: #1a5c45; }
+  .cbar {
+    height: 10px;
+    background: #efe6d2;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    margin: 0 0 8px;
+  }
+  .cbar > span {
+    display: block;
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #3aa38a, #1e7a68);
+    border-radius: 999px;
+    transition: width 0.25s ease;
+  }
+  .side-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .side-actions .btn {
+    flex: 1 1 auto;
+    padding: 8px 10px;
+    font-size: clamp(0.76rem, 2.1vw, 0.88rem);
+  }
+  .ion-counts {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .ion-row {
+    font-size: clamp(0.74rem, 2.1vw, 0.86rem);
+    font-weight: 700;
+    color: #333;
+  }
+  .ion-row.hplus {
+    background: #fde6ea;
+    border: 1px solid #e8a0ab;
+    border-radius: 8px;
+    padding: 3px 8px;
+    font-size: clamp(0.72rem, 1.9vw, 0.84rem);
+    font-weight: 700;
+    color: #9a2030;
+    line-height: 1.3;
+  }
+  .ion-row.hplus strong { font-size: 1.05em; }
+  #sides-conc {
+    padding-bottom: 2px;
+  }
+  #sides-conc .side {
+    padding: 4px 8px 4px;
+  }
+  #sides-conc .cbar { margin-bottom: 2px; }
+  #sides-conc .side h2 { margin-bottom: 2px; }
+  #sides-conc .compare-badge { margin: 2px 0 3px; }
+  #sides-conc .count-row { display: none; }
+  .chooser-row {
+    display: grid;
+    grid-template-columns: minmax(7.5rem, auto) minmax(0, 1fr);
+    gap: 6px 28px;
+    align-items: start;
+    margin: 0 0 4px;
+  }
+  .chooser-row .acid-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    margin: 0;
+    min-width: 0;
+  }
+  .chooser-row .acid-chip,
+  .chooser-row .conc-chip {
+    padding: 6px 10px;
+  }
+  @media (max-width: 700px) {
+    .chooser-row {
+      grid-template-columns: 1fr;
+      gap: 4px;
+    }
+  }
+  .canvas-wrap {
+    flex: 1 1 auto;
+    min-height: 0;
+    margin: 2px 8px;
+    background: var(--panel);
+    border: 2px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 4px 16px var(--shadow);
+    position: relative;
+    overflow: hidden;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+  }
+  .legend {
+    display: flex;
+    gap: 10px 14px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 4px 10px 2px;
+    flex-shrink: 0;
+    font-size: clamp(0.7rem, 2vw, 0.82rem);
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+  }
+  .swatch {
+    flex-shrink: 0;
+    border: 1.5px solid rgba(0,0,0,0.2);
+  }
+  .swatch.water {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--water);
+    border-color: var(--water-edge);
+    opacity: 0.7;
+  }
+  .swatch.acid {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--acid);
+    border-color: var(--acid-edge);
+  }
+  .swatch.hplus {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--hplus);
+    border-color: var(--hplus-edge);
+    position: relative;
+  }
+  .swatch.cl {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--chloride);
+    border-color: var(--acid-edge);
+  }
+  .swatch.acetate {
+    width: 18px; height: 13px;
+    border-radius: 40% 55% 45% 60%;
+    background: var(--acetate);
+    border-color: var(--acetate-edge);
+  }
+  .swatch.hcl-mol {
+    width: 20px; height: 12px;
+    border-radius: 8px;
+    background: linear-gradient(90deg, #f0d0d4 40%, var(--chloride) 42%);
+    border-color: #8a6a70;
+  }
+  .swatch.acetic-mol {
+    width: 20px; height: 14px;
+    border-radius: 40% 50% 45% 55%;
+    background: var(--acetic);
+    border-color: var(--acetic-edge);
+  }
+  .swatch.h2so4-mol {
+    width: 22px; height: 14px;
+    border-radius: 8px;
+    background: linear-gradient(90deg, #f0d0d4 20%, #c9a227 22%, #c9a227 78%, #f0d0d4 80%);
+    border-color: #7a5e10;
+  }
+  .swatch.so4 {
+    width: 16px; height: 16px;
+    border-radius: 30%;
+    background: #c9a227;
+    border-color: #7a5e10;
+  }
+  sub, sup {
+    font-size: 0.72em;
+    line-height: 0;
+    letter-spacing: 0;
+  }
+  .side .acid-group { margin: 2px 0 4px; }
+  .tag {
+    font-size: 0.7rem;
+    color: #888;
+    font-weight: 500;
+  }
+  .hint {
+    margin: 2px 8px 0;
+    padding: 6px 10px;
+    background: var(--panel);
+    border: 1.5px solid #e8a54b;
+    border-radius: 10px;
+    font-size: clamp(0.68rem, 2vw, 0.8rem);
+    line-height: 1.45;
+    flex-shrink: 0;
+    color: #1a1a1a;
+  }
+  .hint strong { color: var(--orange-dark); }
+  .footnote {
+    text-align: center;
+    font-size: clamp(0.64rem, 1.8vw, 0.74rem);
+    color: #666;
+    padding: 4px 10px calc(6px + env(safe-area-inset-bottom, 0px));
+    flex-shrink: 0;
+    line-height: 1.35;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cbar > span { transition: none; }
+    .view-chip:active, .btn:active, .fbtn:active, .acid-chip:active, .conc-chip:active { transform: none; }
+  }
+  @media (max-height: 700px) {
+    header { padding-top: 2px; padding-bottom: 0; }
+    header .sub { display: none; }
+    .hint { padding: 4px 8px; }
+    .legend { padding-top: 2px; padding-bottom: 0; }
+    .side { padding: 4px 6px 6px; }
+    .cbar { margin-bottom: 4px; }
+  }
+  @media (max-height: 560px) {
+    .footnote { padding-top: 2px; padding-bottom: 4px; }
+    .action-bar { padding-bottom: 2px; }
+  }
+  @media (max-width: 600px) {
+    .view-chip, .acid-chip, .conc-chip { padding: 8px 10px; }
+    .side-actions .btn { padding: 8px 8px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>濃酸與稀酸、強酸與弱酸</h1>
+    <p class="sub">課堂模擬：可比較不同濃度、不同酸釋出的 H⁺，並比較強酸與弱酸。濃度與強弱不是同一件事</p>
+  </header>
+
+  <div class="view-bar" role="tablist" aria-label="分頁">
+    <button type="button" class="view-chip active" data-tab="conc" id="tab-conc" role="tab" aria-selected="true" aria-controls="panel-conc">濃酸／稀酸</button>
+    <button type="button" class="view-chip" data-tab="ionize" id="tab-ionize" role="tab" aria-selected="false" aria-controls="panel-ionize">強酸／弱酸</button>
+  </div>
+
+  <div class="action-bar" id="bar-conc">
+    <button type="button" class="btn primary" id="btnConcIonize" aria-label="開始電離">開始電離</button>
+    <button type="button" class="btn secondary" id="btnResetConc" aria-label="重置兩邊燒杯">重置</button>
+    <div class="speed-group" role="group" aria-label="速度">
+      <span class="slabel">速度</span>
+      <button type="button" class="fbtn" data-speed="slow">慢</button>
+      <button type="button" class="fbtn active" data-speed="mid">中</button>
+      <button type="button" class="fbtn" data-speed="fast">快</button>
+    </div>
+  </div>
+
+  <div class="action-bar hidden" id="bar-ionize">
+    <button type="button" class="btn primary" id="btnIonize" aria-label="開始電離">開始電離</button>
+    <button type="button" class="btn secondary" id="btnResetIonize" aria-label="重置電離">重置</button>
+    <div class="speed-group" role="group" aria-label="速度">
+      <span class="slabel">速度</span>
+      <button type="button" class="fbtn" data-speed="slow">慢</button>
+      <button type="button" class="fbtn active" data-speed="mid">中</button>
+      <button type="button" class="fbtn" data-speed="fast">快</button>
+    </div>
+  </div>
+
+  <div class="sides" id="sides-conc">
+    <section class="side" aria-labelledby="left-title">
+      <h2 id="left-title">左邊</h2>
+      <div class="chooser-row">
+      <div class="acid-group" role="group" aria-label="左邊酸種">
+        <span class="slabel">酸種</span>
+        <button type="button" class="acid-chip active" data-side="L" data-acid="HCl" aria-pressed="true">HCl</button>
+        <button type="button" class="acid-chip" data-side="L" data-acid="H2SO4" aria-pressed="false">H₂SO₄</button>
+      </div>
+      <div class="acid-group" role="group" aria-label="左邊濃度">
+        <span class="slabel">濃度</span>
+        <button type="button" class="conc-chip" data-side="L" data-conc="0.1" aria-pressed="false">0.1 M</button>
+        <button type="button" class="conc-chip active" data-side="L" data-conc="0.2" aria-pressed="true">0.2 M</button>
+        <button type="button" class="conc-chip" data-side="L" data-conc="0.5" aria-pressed="false">0.5 M</button>
+      </div>
+      </div>
+      <div class="count-row" aria-live="polite">濃度：<strong id="left-n">0.2 M</strong></div>
+      <div class="ion-row hplus">H⁺ 數目（只作參考）：<strong id="left-h">0</strong></div>
+      <div class="ion-row">陰離子 <span id="left-an-name">Cl⁻</span>：<strong id="left-an">0</strong></div>
+      <div class="compare-badge same" id="left-cmp">相同濃度</div>
+      <div class="cbar" aria-hidden="true"><span id="left-bar"></span></div>
+    </section>
+    <section class="side" aria-labelledby="right-title">
+      <h2 id="right-title">右邊</h2>
+      <div class="chooser-row">
+      <div class="acid-group" role="group" aria-label="右邊酸種">
+        <span class="slabel">酸種</span>
+        <button type="button" class="acid-chip" data-side="R" data-acid="HCl" aria-pressed="false">HCl</button>
+        <button type="button" class="acid-chip active" data-side="R" data-acid="H2SO4" aria-pressed="true">H₂SO₄</button>
+      </div>
+      <div class="acid-group" role="group" aria-label="右邊濃度">
+        <span class="slabel">濃度</span>
+        <button type="button" class="conc-chip" data-side="R" data-conc="0.1" aria-pressed="false">0.1 M</button>
+        <button type="button" class="conc-chip active" data-side="R" data-conc="0.2" aria-pressed="true">0.2 M</button>
+        <button type="button" class="conc-chip" data-side="R" data-conc="0.5" aria-pressed="false">0.5 M</button>
+      </div>
+      </div>
+      <div class="count-row" aria-live="polite">濃度：<strong id="right-n">0.2 M</strong></div>
+      <div class="ion-row hplus">H⁺ 數目（只作參考）：<strong id="right-h">0</strong></div>
+      <div class="ion-row">陰離子 <span id="right-an-name">SO₄²⁻</span>：<strong id="right-an">0</strong></div>
+      <div class="compare-badge same" id="right-cmp">相同濃度</div>
+      <div class="cbar" aria-hidden="true"><span id="right-bar"></span></div>
+    </section>
+  </div>
+
+  <div class="sides hidden" id="sides-ionize">
+    <section class="side" aria-labelledby="strong-title">
+      <h2 id="strong-title">鹽酸 HCl（強酸）</h2>
+      <div class="ion-counts" aria-live="polite">
+        <div class="ion-row">未電離分子：<strong id="s-mol">20</strong></div>
+        <div class="ion-row hplus">H<sup>+</sup> 數目（只作參考）：<strong id="s-h">0</strong></div>
+        <div class="ion-row">陰離子 Cl<sup>−</sup>：<strong id="s-an">0</strong></div>
+      </div>
+    </section>
+    <section class="side" aria-labelledby="weak-title">
+      <h2 id="weak-title">乙酸 CH<sub>3</sub>COOH（弱酸）</h2>
+      <div class="ion-counts" aria-live="polite">
+        <div class="ion-row">未電離分子：<strong id="w-mol">20</strong></div>
+        <div class="ion-row hplus">H<sup>+</sup> 數目（只作參考）：<strong id="w-h">0</strong></div>
+        <div class="ion-row">陰離子 CH<sub>3</sub>COO<sup>−</sup>：<strong id="w-an">0</strong></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="canvas-wrap">
+    <canvas id="cv" aria-label="兩邊燒杯粒子示意動畫"></canvas>
+  </div>
+
+  <div class="legend" id="legend-conc">
+    <span class="legend-item"><span class="swatch water" aria-hidden="true"></span>水分子</span>
+    <span class="legend-item"><span class="swatch hplus" aria-hidden="true"></span>H⁺</span>
+    <span class="legend-item"><span class="swatch cl" aria-hidden="true"></span>Cl⁻</span>
+    <span class="legend-item"><span class="swatch so4" aria-hidden="true"></span>SO₄²⁻</span>
+  </div>
+  <div class="legend hidden" id="legend-ionize">
+    <span class="legend-item"><span class="swatch hcl-mol" aria-hidden="true"></span>HCl 分子</span>
+    <span class="legend-item"><span class="swatch acetic-mol" aria-hidden="true"></span>CH₃COOH 分子</span>
+    <span class="legend-item"><span class="swatch hplus" aria-hidden="true"></span>H⁺</span>
+    <span class="legend-item"><span class="swatch cl" aria-hidden="true"></span>Cl⁻</span>
+    <span class="legend-item"><span class="swatch acetate" aria-hidden="true"></span>CH₃COO⁻</span>
+    <span class="legend-item"><span class="swatch water" aria-hidden="true"></span>水分子</span>
+  </div>
+
+  <div class="hint" id="hint">
+    <strong>課堂重點：</strong>兩邊體積相同，可分別揀 HCl 或 H₂SO₄，以及濃度 0.1 M、0.2 M 或 0.5 M。按「開始電離」比較電離出的 H⁺ 數目。相同濃度並不表示 [H⁺] 相同。濃度與強弱不是同一件事。
+  </div>
+  <p class="footnote">粒子大小與數目為示意，並非真實比例或摩爾數。</p>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ============================================================
+     window.__acidSim 測試介面（見檔案末）
+     setTab(name)           'conc' | 'ionize'（亦接受 'A'/'B'）
+     setAcid(side, id)      side: 'L'|'R'|'left'|'right'；id: 'HCl'|'H2SO4'
+     setLeftAcid(id) / setRightAcid(id)
+     setConc(side, m)       side: 'L'|'R'|'left'|'right'；m: 0.1 | 0.2 | 0.5
+     setLeftConc(m) / setRightConc(m)
+     startIonize()          播放或重播目前分頁的電離（減少動態時直接跳至結束）
+     setIonizeProgress(t)   0..1，跳至目前分頁該進度；1 為完成
+     setSpeed('slow'|'mid'|'fast')
+     reset()                只重置目前分頁，另一分頁狀態保留
+     getState()             兩邊分頁的狀態快照
+     ============================================================ */
+
+  var canvas = document.getElementById('cv');
+  var ctx = canvas.getContext('2d');
+  var FONT = '"PingFang TC","Noto Sans TC","Noto Sans CJK TC","Microsoft JhengHei",sans-serif';
+
+  var CONC_SCALE = { 0.1: 8, 0.2: 16, 0.5: 40 };
+  var CONC_DEFAULT = 0.2;
+  var CONC_MAX = 0.5;
+  var WATER_CONC = 40;
+  var WATER_ION = 14;
+  var START_UNITS = 20;
+  var STRONG_IONIZE = 19;
+  var WEAK_IONIZE = 2;
+  var SPEED_MS = { slow: 8000, mid: 4500, fast: 2200 };
+  var DROP_MS = 520;
+
+  var ACID_LABEL = {
+    HCl: 'HCl',
+    H2SO4: 'H₂SO₄'
+  };
+  var ANION_LABEL = {
+    HCl: 'Cl⁻',
+    H2SO4: 'SO₄²⁻'
+  };
+
+  var HINT_CONC_IDLE = '<strong>課堂重點：</strong>兩邊體積相同，可分別揀 HCl 或 H₂SO₄，以及濃度 0.1 M、0.2 M 或 0.5 M。按「開始電離」比較電離出的 H⁺ 數目。相同濃度並不表示 [H⁺] 相同。濃度與強弱不是同一件事。';
+  var HINT_CONC_RUN = '<strong>課堂重點：</strong>觀察兩邊的 H⁺ 數目——每個 HCl 釋出 1 個 H⁺，每個 H₂SO₄ 可釋出 2 個 H⁺（示意，包括第一步及第二步電離；實際上課第二步電離較弱）。相同濃度並不表示 [H⁺] 相同。';
+  var HINT_CONC_DONE_SAME = '<strong>課堂重點：</strong>相同濃度、相同體積下，H₂SO₄ 可釋出較多 H⁺，所以 [H⁺] 可以較高。這並不是「濃度等於強度」。實際上課，H₂SO₄ 第二步電離較弱，畫面為示意完全電離。';
+  var HINT_CONC_DONE_SAME_ACID = '<strong>課堂重點：</strong>相同濃度、相同體積、相同酸種下，電離出的 H⁺ 數目相同。濃度與強弱不是同一件事。若兩邊酸種不同，即使濃度相同，H₂SO₄ 也可釋出較多 H⁺（示意完全電離；實際上課第二步電離較弱）。';
+  var HINT_CONC_DONE_DIFF = '<strong>課堂重點：</strong>較濃的一邊粒子較多，電離後 H⁺ 亦可以較多。若酸種不同，即使濃度相同，H₂SO₄ 也可釋出較多 H⁺。濃度與強弱不是同一件事。實際上課，H₂SO₄ 第二步電離較弱，畫面為示意完全電離。';
+  var HINT_CONC = HINT_CONC_IDLE;
+  var HINT_ION_IDLE = '<strong>課堂重點：</strong>兩邊起始酸分子數目和體積相同（相同濃度）。按「開始電離」比較電離出的 H⁺ 數目。強弱與濃稀不是同一件事。';
+  var HINT_ION_RUN = '<strong>課堂重點：</strong>觀察兩邊的 H⁺ 數目——強酸正在大量電離，弱酸只有很少分子電離。強弱與濃稀不是同一件事。';
+  var HINT_ION_DONE = '<strong>課堂重點：</strong>相同濃度下，強酸幾乎全部電離，產生大量 H⁺；弱酸只有部分電離，H⁺ 較少。強弱與濃稀不是同一件事。';
+
+  var tab = 'conc';
+  var dpr = 1, W = 0, H = 0;
+  var layout = null;
+  var lastTs = 0;
+  var animTime = 0;
+  var reducedMotion = false;
+  var mq = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+
+  var conc = {
+    watersL: [],
+    watersR: [],
+    unitsL: [],
+    unitsR: [],
+    acidL: 'HCl',
+    acidR: 'H2SO4',
+    molarL: CONC_DEFAULT,
+    molarR: CONC_DEFAULT,
+    phase: 'idle',
+    t: 0,
+    clock: 0
+  };
+
+  var ion = {
+    phase: 'idle',
+    speed: 'mid',
+    t: 0,
+    clock: 0,
+    watersL: [],
+    watersR: [],
+    strong: [],
+    weak: []
+  };
+
+  var el = {
+    hint: document.getElementById('hint'),
+    leftN: document.getElementById('left-n'),
+    rightN: document.getElementById('right-n'),
+    leftH: document.getElementById('left-h'),
+    rightH: document.getElementById('right-h'),
+    leftAn: document.getElementById('left-an'),
+    rightAn: document.getElementById('right-an'),
+    leftAnName: document.getElementById('left-an-name'),
+    rightAnName: document.getElementById('right-an-name'),
+    leftCmp: document.getElementById('left-cmp'),
+    rightCmp: document.getElementById('right-cmp'),
+    leftBar: document.getElementById('left-bar'),
+    rightBar: document.getElementById('right-bar'),
+    btnConcIonize: document.getElementById('btnConcIonize'),
+    btnResetConc: document.getElementById('btnResetConc'),
+    btnIonize: document.getElementById('btnIonize'),
+    btnResetIonize: document.getElementById('btnResetIonize'),
+    sMol: document.getElementById('s-mol'),
+    sH: document.getElementById('s-h'),
+    sAn: document.getElementById('s-an'),
+    wMol: document.getElementById('w-mol'),
+    wH: document.getElementById('w-h'),
+    wAn: document.getElementById('w-an')
+  };
+
+  function rand(a, b) { return a + Math.random() * (b - a); }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function ease(t) {
+    t = clamp(t, 0, 1);
+    return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+  }
+  function seeded(n) {
+    var x = Math.sin(n * 127.1 + 311.7) * 43758.5453;
+    return x - Math.floor(x);
+  }
+
+  function updateReduced() {
+    reducedMotion = !!(mq && mq.matches);
+  }
+  updateReduced();
+  if (mq) {
+    if (mq.addEventListener) mq.addEventListener('change', updateReduced);
+    else if (mq.addListener) mq.addListener(updateReduced);
+  }
+
+  function bindTap(elmt, fn) {
+    var last = 0;
+    elmt.addEventListener('pointerup', function (e) {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      var now = Date.now();
+      if (now - last < 260) return;
+      last = now;
+      fn(e);
+    });
+    elmt.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        fn(e);
+      }
+    });
+  }
+
+  function durationMs() {
+    return SPEED_MS[ion.speed] || SPEED_MS.mid;
+  }
+
+  function resize() {
+    var rect = canvas.parentElement.getBoundingClientRect();
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = Math.max(260, Math.floor(rect.width));
+    H = Math.max(180, Math.floor(rect.height));
+    canvas.width = Math.floor(W * dpr);
+    canvas.height = Math.floor(H * dpr);
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    buildLayout();
+    draw();
+  }
+
+  function buildLayout() {
+    var pad = Math.max(4, Math.min(W, H) * 0.012);
+    var half = W / 2;
+    var gap = Math.max(18, Math.min(W * 0.035, 36));
+    var maxW = half - pad - gap / 2;
+    var bW = Math.min(maxW, H * 0.92, 520);
+    var capH = 22;
+    var bH = Math.min(H - pad * 2 - capH, bW * 1.62, H * 0.97);
+    var top = Math.max(pad + capH, (H - bH) * 0.36);
+    var liquidFrac = 0.60;
+    var leftCx = half - gap / 2 - bW / 2;
+    var rightCx = half + gap / 2 + bW / 2;
+    var minS = Math.min(bW, bH);
+    layout = {
+      pad: pad,
+      gap: gap,
+      liquidFrac: liquidFrac,
+      left: { cx: leftCx, top: top, w: bW, h: bH, side: 'L', spout: -1 },
+      right: { cx: rightCx, top: top, w: bW, h: bH, side: 'R', spout: 1 },
+      sizes: {
+        water: Math.max(2.8, minS * 0.028),
+        acid: Math.max(5.2, minS * 0.048),
+        hplus: Math.max(7.2, minS * 0.055),
+        cl: Math.max(8.0, minS * 0.062),
+        acetate: Math.max(7.4, minS * 0.068),
+        hclH: Math.max(3.6, minS * 0.032),
+        hclCl: Math.max(5.4, minS * 0.048),
+        acetic: Math.max(7.4, minS * 0.068),
+        h2so4: Math.max(7.6, minS * 0.070),
+        so4: Math.max(9.5, minS * 0.085)
+      }
+    };
+  }
+
+  function beakerInner(b) {
+    return {
+      x0: b.cx - b.w / 2 + 4,
+      x1: b.cx + b.w / 2 - 4,
+      y0: b.top + 10,
+      y1: b.top + b.h - 4
+    };
+  }
+
+  function liquidBounds(b) {
+    var inner = beakerInner(b);
+    var lvl = liquidLevel(b);
+    return {
+      x0: inner.x0 + 3,
+      x1: inner.x1 - 3,
+      y0: lvl + 4,
+      y1: inner.y1 - 3,
+      w: inner.x1 - inner.x0 - 6,
+      h: inner.y1 - 3 - (lvl + 4)
+    };
+  }
+
+  function liquidLevel(b) {
+    var inner = beakerInner(b);
+    return inner.y1 - (inner.y1 - inner.y0) * layout.liquidFrac;
+  }
+
+  function beakerPath(b, spout) {
+    var x0 = b.cx - b.w / 2;
+    var x1 = b.cx + b.w / 2;
+    var y0 = b.top;
+    var y1 = b.top + b.h;
+    var botR = Math.min(12, b.w * 0.08);
+    var dir = 0;
+    if (spout === true) dir = b.spout || 1;
+    else if (spout === false || spout == null) dir = 0;
+    else dir = spout;
+    ctx.beginPath();
+    ctx.moveTo(x0, y0 + 6);
+    if (dir < 0) {
+      ctx.lineTo(x0 - b.w * 0.015, y0 + 4);
+      ctx.quadraticCurveTo(x0 - b.w * 0.10, y0 - 6, x0 - b.w * 0.16, y0 + 2);
+      ctx.quadraticCurveTo(x0 - b.w * 0.08, y0 + 8, x0, y0 + 10);
+    }
+    ctx.lineTo(x0, y1 - botR);
+    ctx.quadraticCurveTo(x0, y1, x0 + botR, y1);
+    ctx.lineTo(x1 - botR, y1);
+    ctx.quadraticCurveTo(x1, y1, x1, y1 - botR);
+    ctx.lineTo(x1, y0 + 10);
+    if (dir > 0) {
+      ctx.lineTo(x1 + b.w * 0.015, y0 + 4);
+      ctx.quadraticCurveTo(x1 + b.w * 0.10, y0 - 6, x1 + b.w * 0.16, y0 + 2);
+      ctx.quadraticCurveTo(x1 + b.w * 0.08, y0 + 8, x1, y0 + 10);
+    }
+    ctx.lineTo(x1, y0 + 6);
+    if (dir < 0) {
+      /* close along the rim to the left spout start */
+    }
+  }
+
+  function pxOf(p, b) {
+    var box = liquidBounds(b);
+    return {
+      x: box.x0 + p.nx * box.w,
+      y: box.y0 + p.ny * box.h
+    };
+  }
+
+  function halton(index, base) {
+    var result = 0, f = 1, i = index + 1;
+    while (i > 0) {
+      f = f / base;
+      result += f * (i % base);
+      i = Math.floor(i / base);
+    }
+    return result;
+  }
+
+  function scatterParticle(i, n, seedOff) {
+    /* Even fill of the liquid rectangle (Halton) so concentration reads as density, not a central clump. */
+    void n;
+    var nx = 0.07 + 0.86 * halton(i + seedOff * 3, 2);
+    var ny = 0.07 + 0.86 * halton(i + seedOff * 3, 3);
+    return {
+      nx: nx,
+      ny: ny,
+      phase: seeded(i + seedOff) * Math.PI * 2,
+      vx: 0,
+      vy: 0
+    };
+  }
+
+  function makeWater(n, seedOff) {
+    var arr = [];
+    var i, p;
+    for (i = 0; i < n; i++) {
+      p = scatterParticle(i, n, seedOff);
+      p.kind = 'water';
+      arr.push(p);
+    }
+    return arr;
+  }
+
+  function makeAcidParticle(i, n, seedOff, dropping) {
+    var p = scatterParticle(i, n, seedOff);
+    p.kind = 'acid';
+    p.dropping = !!dropping;
+    p.dropT = dropping ? 0 : 1;
+    p.tnx = p.nx;
+    p.tny = p.ny;
+    p.snx = p.nx;
+    p.sny = -0.10 - seeded(i + 80) * 0.08;
+    if (dropping) {
+      p.nx = p.snx;
+      p.ny = p.sny;
+    }
+    return p;
+  }
+
+  function ensureConcWaters() {
+    if (!conc.watersL.length) conc.watersL = makeWater(WATER_CONC, 11);
+    if (!conc.watersR.length) conc.watersR = makeWater(WATER_CONC, 29);
+  }
+
+  function makeConcUnit(i, n, seedOff, acidId, dropping) {
+    var p = scatterParticle(i, n, seedOff);
+    p.kind = acidId === 'H2SO4' ? 'h2so4' : 'hcl';
+    p.acidId = acidId;
+    p.state = 'molecule';
+    p.willIonize = true;
+    p.delay = 0.08 + (i / Math.max(1, n - 1)) * 0.72;
+    p.hs = null;
+    p.an = null;
+    p.dropping = !!dropping;
+    p.dropT = dropping ? 0 : 1;
+    p.tnx = p.nx;
+    p.tny = p.ny;
+    p.snx = p.nx;
+    p.sny = -0.10 - seeded(i + 80) * 0.08;
+    if (dropping) {
+      p.nx = p.snx;
+      p.ny = p.sny;
+    }
+    return p;
+  }
+
+  function snapIfReduced(p) {
+    if (reducedMotion) {
+      p.dropping = false;
+      p.dropT = 1;
+      p.nx = p.tnx;
+      p.ny = p.tny;
+    }
+    return p;
+  }
+
+  function buildConcSide(acidId, count, seedOff, dropping) {
+    var arr = [];
+    var i;
+    for (i = 0; i < count; i++) {
+      arr.push(snapIfReduced(makeConcUnit(i, count, seedOff, acidId, !!dropping && !reducedMotion)));
+    }
+    return arr;
+  }
+
+  function formatMolar(m) {
+    return m + ' M';
+  }
+
+  function normalizeMolar(m) {
+    var v;
+    if (typeof m === 'number') v = m;
+    else if (typeof m === 'string') v = parseFloat(String(m).replace(/[^\d.]/g, ''));
+    else return null;
+    if (v === 0.1 || v === 0.2 || v === 0.5) return v;
+    return null;
+  }
+
+  function unitCountFor(molar) {
+    var m = normalizeMolar(molar);
+    return CONC_SCALE[m] || CONC_SCALE[CONC_DEFAULT];
+  }
+
+  function rebuildConcSide(side, dropping) {
+    if (side === 'L') {
+      conc.unitsL = buildConcSide(conc.acidL, unitCountFor(conc.molarL), 5, !!dropping);
+    } else {
+      conc.unitsR = buildConcSide(conc.acidR, unitCountFor(conc.molarR), 91, !!dropping);
+    }
+  }
+
+  function resetConcIonizeClock() {
+    conc.phase = 'idle';
+    conc.t = 0;
+    conc.clock = 0;
+  }
+
+  function resetConc() {
+    conc.acidL = 'HCl';
+    conc.acidR = 'H2SO4';
+    conc.molarL = CONC_DEFAULT;
+    conc.molarR = CONC_DEFAULT;
+    rebuildConcSide('L', false);
+    rebuildConcSide('R', false);
+    conc.watersL = makeWater(WATER_CONC, 11);
+    conc.watersR = makeWater(WATER_CONC, 29);
+    resetConcIonizeClock();
+    syncAcidChips();
+    syncConcChips();
+    syncConcUI();
+  }
+
+  function concSideCounts(units) {
+    var mol = 0, h = 0, an = 0, i, u;
+    for (i = 0; i < units.length; i++) {
+      u = units[i];
+      if (u.state === 'molecule') mol++;
+      else {
+        h += (u.hs && u.hs.length) ? u.hs.length : 0;
+        an++;
+      }
+    }
+    return { molecules: mol, hPlus: h, anion: an };
+  }
+
+  function compareLabels() {
+    var sL = concSideCounts(conc.unitsL);
+    var sR = concSideCounts(conc.unitsR);
+    if (sL.hPlus === 0 && sR.hPlus === 0) {
+      if (conc.molarL === conc.molarR) {
+        return { L: '相同濃度', R: '相同濃度', Lc: 'same', Rc: 'same' };
+      }
+      if (conc.molarL > conc.molarR) {
+        return { L: '較濃', R: '較稀', Lc: 'conc', Rc: 'dil' };
+      }
+      return { L: '較稀', R: '較濃', Lc: 'dil', Rc: 'conc' };
+    }
+    if (sL.hPlus === sR.hPlus) {
+      return { L: 'H⁺ 數目相同', R: 'H⁺ 數目相同', Lc: 'same', Rc: 'same' };
+    }
+    if (sL.hPlus > sR.hPlus) {
+      return { L: 'H⁺ 較多', R: 'H⁺ 較少', Lc: 'conc', Rc: 'dil' };
+    }
+    return { L: 'H⁺ 較少', R: 'H⁺ 較多', Lc: 'dil', Rc: 'conc' };
+  }
+
+  function concHint() {
+    if (conc.phase === 'done') {
+      if (conc.molarL === conc.molarR) {
+        return conc.acidL === conc.acidR ? HINT_CONC_DONE_SAME_ACID : HINT_CONC_DONE_SAME;
+      }
+      return HINT_CONC_DONE_DIFF;
+    }
+    if (conc.phase === 'running') return HINT_CONC_RUN;
+    return HINT_CONC_IDLE;
+  }
+
+  function syncAcidChips() {
+    var chips = document.querySelectorAll('#sides-conc .acid-chip');
+    Array.prototype.forEach.call(chips, function (c) {
+      var side = c.getAttribute('data-side');
+      var cur = side === 'L' ? conc.acidL : conc.acidR;
+      var on = c.getAttribute('data-acid') === cur;
+      c.classList.toggle('active', on);
+      c.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  }
+
+  function syncConcChips() {
+    var chips = document.querySelectorAll('#sides-conc .conc-chip');
+    Array.prototype.forEach.call(chips, function (c) {
+      var side = c.getAttribute('data-side');
+      var cur = side === 'L' ? conc.molarL : conc.molarR;
+      var on = normalizeMolar(c.getAttribute('data-conc')) === cur;
+      c.classList.toggle('active', on);
+      c.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  }
+
+  function syncConcUI() {
+    var sL = concSideCounts(conc.unitsL);
+    var sR = concSideCounts(conc.unitsR);
+    el.leftN.textContent = formatMolar(conc.molarL);
+    el.rightN.textContent = formatMolar(conc.molarR);
+    el.leftH.textContent = String(sL.hPlus);
+    el.rightH.textContent = String(sR.hPlus);
+    el.leftAn.textContent = String(sL.anion);
+    el.rightAn.textContent = String(sR.anion);
+    el.leftAnName.textContent = ANION_LABEL[conc.acidL] || 'Cl⁻';
+    el.rightAnName.textContent = ANION_LABEL[conc.acidR] || 'SO₄²⁻';
+    var cmp = compareLabels();
+    el.leftCmp.textContent = cmp.L;
+    el.rightCmp.textContent = cmp.R;
+    el.leftCmp.className = 'compare-badge ' + cmp.Lc;
+    el.rightCmp.className = 'compare-badge ' + cmp.Rc;
+    el.leftBar.style.width = (100 * conc.molarL / CONC_MAX) + '%';
+    el.rightBar.style.width = (100 * conc.molarR / CONC_MAX) + '%';
+    if (conc.phase === 'done') {
+      el.btnConcIonize.textContent = '重播';
+      el.btnConcIonize.disabled = false;
+    } else if (conc.phase === 'running') {
+      el.btnConcIonize.textContent = '開始電離';
+      el.btnConcIonize.disabled = true;
+    } else {
+      el.btnConcIonize.textContent = '開始電離';
+      el.btnConcIonize.disabled = false;
+    }
+    if (tab === 'conc') el.hint.innerHTML = concHint();
+  }
+
+  function normalizeSide(side) {
+    if (side === 'L' || side === 'l' || side === 'left' || side === '左邊') return 'L';
+    if (side === 'R' || side === 'r' || side === 'right' || side === '右邊') return 'R';
+    return null;
+  }
+
+  function setAcid(side, id) {
+    var s = normalizeSide(side);
+    if (!s || !ACID_LABEL[id]) return;
+    if (s === 'L') conc.acidL = id;
+    else conc.acidR = id;
+    rebuildConcSide('L', false);
+    rebuildConcSide('R', false);
+    resetConcIonizeClock();
+    syncAcidChips();
+    syncConcUI();
+  }
+
+  function setConc(side, molar) {
+    var s = normalizeSide(side);
+    var m = normalizeMolar(molar);
+    if (!s || m == null) return;
+    if (s === 'L') conc.molarL = m;
+    else conc.molarR = m;
+    rebuildConcSide('L', false);
+    rebuildConcSide('R', false);
+    resetConcIonizeClock();
+    syncConcChips();
+    syncConcUI();
+  }
+
+  function convertConcUnit(u) {
+    if (u.state !== 'molecule') return;
+    u.state = 'ions';
+    var two = u.acidId === 'H2SO4';
+    var jx = (seeded(u.phase * 10 + 2) - 0.5) * 0.10;
+    var jy = (seeded(u.phase * 10 + 4) - 0.5) * 0.10;
+    u.hs = [];
+    u.hs.push({
+      kind: 'hplus',
+      nx: clamp(u.nx - 0.08 + jx, 0.06, 0.94),
+      ny: clamp(u.ny + jy, 0.06, 0.94),
+      vx: reducedMotion ? 0 : -18,
+      vy: 0,
+      phase: u.phase + 1
+    });
+    if (two) {
+      u.hs.push({
+        kind: 'hplus',
+        nx: clamp(u.nx - 0.02 - jx, 0.06, 0.94),
+        ny: clamp(u.ny - 0.10 + jy, 0.06, 0.94),
+        vx: reducedMotion ? 0 : -8,
+        vy: reducedMotion ? 0 : -12,
+        phase: u.phase + 3
+      });
+    }
+    u.an = {
+      kind: two ? 'so4' : 'cl',
+      nx: clamp(u.nx + 0.07 - jx, 0.06, 0.94),
+      ny: clamp(u.ny - jy, 0.06, 0.94),
+      vx: reducedMotion ? 0 : 16,
+      vy: 0,
+      phase: u.phase + 2
+    };
+  }
+
+  function prepareConcDelays() {
+    function prep(list) {
+      var i, u;
+      for (i = 0; i < list.length; i++) {
+        u = list[i];
+        u.state = 'molecule';
+        u.hs = null;
+        u.an = null;
+        u.willIonize = true;
+        u.delay = 0.08 + (i / Math.max(1, list.length - 1)) * 0.72;
+      }
+    }
+    prep(conc.unitsL);
+    prep(conc.unitsR);
+  }
+
+  function applyConcIonizeProgress(t) {
+    t = clamp(t, 0, 1);
+    if (!conc.unitsL.length) resetConc();
+    prepareConcDelays();
+    conc.t = t;
+    conc.clock = t * durationMs();
+    function applyList(list) {
+      var i, u;
+      for (i = 0; i < list.length; i++) {
+        u = list[i];
+        if (u.willIonize && t >= u.delay) convertConcUnit(u);
+      }
+    }
+    applyList(conc.unitsL);
+    applyList(conc.unitsR);
+    if (t >= 1) conc.phase = 'done';
+    else if (t <= 0) conc.phase = 'idle';
+    else conc.phase = 'running';
+    syncConcUI();
+  }
+
+  function startConcIonize() {
+    prepareConcDelays();
+    if (reducedMotion) {
+      applyConcIonizeProgress(1);
+      return;
+    }
+    conc.phase = 'running';
+    conc.t = 0;
+    conc.clock = 0;
+    syncConcUI();
+  }
+
+  function stepConcIonize(dt) {
+    if (conc.phase !== 'running') return;
+    conc.clock += dt;
+    var t = clamp(conc.clock / durationMs(), 0, 1);
+    conc.t = t;
+    var changed = false;
+    function due(list) {
+      var i, u;
+      for (i = 0; i < list.length; i++) {
+        u = list[i];
+        if (u.willIonize && u.state === 'molecule' && t >= u.delay) {
+          convertConcUnit(u);
+          changed = true;
+        }
+      }
+    }
+    due(conc.unitsL);
+    due(conc.unitsR);
+    if (t >= 1) {
+      conc.phase = 'done';
+      conc.t = 1;
+      changed = true;
+    }
+    if (changed) syncConcUI();
+  }
+
+  function unitCounts(units) {
+    var mol = 0, h = 0, an = 0, i, u;
+    for (i = 0; i < units.length; i++) {
+      u = units[i];
+      if (u.state === 'molecule') mol++;
+      else { h++; an++; }
+    }
+    return { molecules: mol, hPlus: h, anion: an };
+  }
+
+  function syncIonizeUI() {
+    var s = unitCounts(ion.strong);
+    var w = unitCounts(ion.weak);
+    el.sMol.textContent = String(s.molecules);
+    el.sH.textContent = String(s.hPlus);
+    el.sAn.textContent = String(s.anion);
+    el.wMol.textContent = String(w.molecules);
+    el.wH.textContent = String(w.hPlus);
+    el.wAn.textContent = String(w.anion);
+    if (ion.phase === 'done') {
+      el.btnIonize.textContent = '重播';
+      el.btnIonize.disabled = false;
+      el.hint.innerHTML = HINT_ION_DONE;
+    } else if (ion.phase === 'running') {
+      el.btnIonize.textContent = '開始電離';
+      el.btnIonize.disabled = true;
+      el.hint.innerHTML = HINT_ION_RUN;
+    } else {
+      el.btnIonize.textContent = '開始電離';
+      el.btnIonize.disabled = false;
+      el.hint.innerHTML = HINT_ION_IDLE;
+    }
+  }
+
+  function makeUnit(i, n, seedOff, kind, willIonize, delay) {
+    var p = scatterParticle(i, n, seedOff);
+    p.kind = kind;
+    p.state = 'molecule';
+    p.willIonize = !!willIonize;
+    p.delay = delay;
+    p.h = null;
+    p.an = null;
+    return p;
+  }
+
+  function buildIonizeParticles() {
+    var i, delay;
+    ion.watersL = makeWater(WATER_ION, 41);
+    ion.watersR = makeWater(WATER_ION, 73);
+    ion.strong = [];
+    ion.weak = [];
+    for (i = 0; i < START_UNITS; i++) {
+      delay = 0.08 + (i / Math.max(1, STRONG_IONIZE - 1)) * 0.72;
+      ion.strong.push(makeUnit(i, START_UNITS, 5, 'hcl', i < STRONG_IONIZE, delay));
+    }
+    /* Weak: only first WEAK_IONIZE ionize, at staggered mid delays */
+    var weakDelays = [0.22, 0.58, 0.70, 0.80];
+    for (i = 0; i < START_UNITS; i++) {
+      ion.weak.push(makeUnit(i, START_UNITS, 91, 'acetic', i < WEAK_IONIZE, weakDelays[i] || 0.5));
+    }
+    ion.t = 0;
+    ion.clock = 0;
+    ion.phase = 'idle';
+  }
+
+  function convertUnit(u) {
+    if (u.state !== 'molecule') return;
+    u.state = 'ions';
+    var jx = (seeded(u.phase * 10 + 2) - 0.5) * 0.10;
+    var jy = (seeded(u.phase * 10 + 4) - 0.5) * 0.10;
+    u.h = {
+      kind: 'hplus',
+      nx: clamp(u.nx - 0.08 + jx, 0.06, 0.94),
+      ny: clamp(u.ny + jy, 0.06, 0.94),
+      vx: 0,
+      vy: 0,
+      phase: u.phase + 1
+    };
+    u.an = {
+      kind: u.kind === 'hcl' ? 'cl' : 'acetate',
+      nx: clamp(u.nx + 0.07 - jx, 0.06, 0.94),
+      ny: clamp(u.ny - jy, 0.06, 0.94),
+      vx: 0,
+      vy: 0,
+      phase: u.phase + 2
+    };
+    if (!reducedMotion) {
+      u.h.vx = -18;
+      u.an.vx = 16;
+    }
+  }
+
+  function applyIonizeProgressB(t) {
+    t = clamp(t, 0, 1);
+    if (!ion.strong.length) buildIonizeParticles();
+    /* Rebuild then apply forward so rewind works */
+    var i, u;
+    for (i = 0; i < ion.strong.length; i++) {
+      u = ion.strong[i];
+      u.state = 'molecule';
+      u.h = u.an = null;
+    }
+    for (i = 0; i < ion.weak.length; i++) {
+      u = ion.weak[i];
+      u.state = 'molecule';
+      u.h = u.an = null;
+    }
+    ion.t = t;
+    ion.clock = t * durationMs();
+    function applyList(list) {
+      for (i = 0; i < list.length; i++) {
+        u = list[i];
+        if (u.willIonize && t >= u.delay) convertUnit(u);
+      }
+    }
+    applyList(ion.strong);
+    applyList(ion.weak);
+    if (t >= 1) ion.phase = 'done';
+    else if (t <= 0) ion.phase = 'idle';
+    else ion.phase = 'running';
+    syncIonizeUI();
+  }
+
+  function startIonizeB() {
+    buildIonizeParticles();
+    if (reducedMotion) {
+      applyIonizeProgressB(1);
+      return;
+    }
+    ion.phase = 'running';
+    ion.t = 0;
+    ion.clock = 0;
+    syncIonizeUI();
+  }
+
+  function resetIonize() {
+    buildIonizeParticles();
+    ion.phase = 'idle';
+    ion.t = 0;
+    ion.clock = 0;
+    syncIonizeUI();
+  }
+
+  function setSpeed(s) {
+    if (!SPEED_MS[s]) return;
+    var oldDur = durationMs();
+    ion.speed = s;
+    var btns = document.querySelectorAll('.speed-group .fbtn');
+    Array.prototype.forEach.call(btns, function (b) {
+      var on = b.getAttribute('data-speed') === s;
+      b.classList.toggle('active', on);
+    });
+    /* Keep visual progress if running */
+    if (ion.phase === 'running') {
+      ion.clock = ion.t * durationMs();
+    }
+    if (conc.phase === 'running') {
+      conc.clock = conc.t * durationMs();
+    }
+    void oldDur;
+  }
+
+  function startIonize() {
+    if (tab === 'conc') startConcIonize();
+    else startIonizeB();
+  }
+
+  function applyIonizeProgress(t) {
+    if (tab === 'conc') applyConcIonizeProgress(t);
+    else applyIonizeProgressB(t);
+  }
+
+  function setTab(name) {
+    var t = name;
+    if (t === 'A' || t === 'a' || t === '濃酸' || t === 'conc') t = 'conc';
+    else if (t === 'B' || t === 'b' || t === '強酸' || t === 'ionize') t = 'ionize';
+    else if (t !== 'conc' && t !== 'ionize') return;
+    tab = t;
+    var isConc = tab === 'conc';
+    document.getElementById('tab-conc').classList.toggle('active', isConc);
+    document.getElementById('tab-ionize').classList.toggle('active', !isConc);
+    document.getElementById('tab-conc').setAttribute('aria-selected', isConc ? 'true' : 'false');
+    document.getElementById('tab-ionize').setAttribute('aria-selected', isConc ? 'false' : 'true');
+    document.getElementById('bar-conc').classList.toggle('hidden', !isConc);
+    document.getElementById('bar-ionize').classList.toggle('hidden', isConc);
+    document.getElementById('sides-conc').classList.toggle('hidden', !isConc);
+    document.getElementById('sides-ionize').classList.toggle('hidden', isConc);
+    document.getElementById('legend-conc').classList.toggle('hidden', !isConc);
+    document.getElementById('legend-ionize').classList.toggle('hidden', isConc);
+    if (isConc) {
+      syncConcUI();
+    } else {
+      syncIonizeUI();
+    }
+    /* Layout may change because chrome height changed */
+    requestAnimationFrame(function () { resize(); });
+  }
+
+  function resetCurrent() {
+    if (tab === 'conc') resetConc();
+    else resetIonize();
+  }
+
+  function roundRect(x, y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function glassStroke() {
+    ctx.strokeStyle = '#6e818c';
+    ctx.lineWidth = 2.4;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+  }
+
+  function drawBeakerGlass(b) {
+    /* Liquid */
+    var inner = beakerInner(b);
+    var lvl = liquidLevel(b);
+    ctx.save();
+    beakerPath(b, false);
+    ctx.clip();
+    var lg = ctx.createLinearGradient(inner.x0, lvl, inner.x1, inner.y1);
+    lg.addColorStop(0, 'rgba(190, 220, 232, 0.42)');
+    lg.addColorStop(1, 'rgba(160, 200, 218, 0.55)');
+    ctx.fillStyle = lg;
+    ctx.beginPath();
+    ctx.moveTo(inner.x0, lvl + 5);
+    ctx.quadraticCurveTo((inner.x0 + inner.x1) / 2, lvl - 4, inner.x1, lvl + 5);
+    ctx.lineTo(inner.x1, inner.y1);
+    ctx.lineTo(inner.x0, inner.y1);
+    ctx.closePath();
+    ctx.fill();
+    /* Surface ellipse */
+    ctx.beginPath();
+    ctx.ellipse(b.cx, lvl + 1, (inner.x1 - inner.x0) / 2, Math.max(3, b.w * 0.045), 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(230, 244, 250, 0.35)';
+    ctx.fill();
+    ctx.restore();
+
+    /* Glass body */
+    beakerPath(b, true);
+    ctx.fillStyle = 'rgba(210, 228, 236, 0.12)';
+    ctx.fill();
+    glassStroke();
+    ctx.stroke();
+
+    /* Rim */
+    ctx.beginPath();
+    ctx.ellipse(b.cx, b.top + 6, b.w / 2, Math.max(4, b.w * 0.06), 0, 0, Math.PI * 2);
+    ctx.strokeStyle = '#5f737e';
+    ctx.lineWidth = 2.2;
+    ctx.stroke();
+
+    /* Shine */
+    ctx.beginPath();
+    ctx.moveTo(b.cx - b.w * 0.38, b.top + b.h * 0.2);
+    ctx.lineTo(b.cx - b.w * 0.38, b.top + b.h * 0.78);
+    ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+
+    /* Graduation marks — same on both beakers; liquid sits at the same mark */
+    var marks = 4;
+    var i, my, mw;
+    for (i = 1; i <= marks; i++) {
+      var frac = i / (marks + 1);
+      my = inner.y1 - (inner.y1 - inner.y0) * frac;
+      mw = (Math.abs(frac - layout.liquidFrac) < 0.06) ? b.w * 0.16 : b.w * 0.10;
+      ctx.beginPath();
+      ctx.moveTo(inner.x1 - 2, my);
+      ctx.lineTo(inner.x1 - 2 - mw, my);
+      ctx.strokeStyle = (Math.abs(frac - layout.liquidFrac) < 0.06) ? '#c45f0a' : 'rgba(80,90,100,0.45)';
+      ctx.lineWidth = (Math.abs(frac - layout.liquidFrac) < 0.06) ? 2 : 1.2;
+      ctx.stroke();
+    }
+  }
+
+  function drawVolumeCaption() {
+    var fs = Math.max(11, Math.round(Math.min(W, H) * 0.032));
+    ctx.font = '700 ' + fs + 'px ' + FONT;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    var label = '相同體積';
+    var tw = ctx.measureText(label).width;
+    var y = 8 + fs / 2 + 2;
+    ctx.fillStyle = 'rgba(255,253,247,0.96)';
+    roundRect(W / 2 - tw / 2 - 8, y - fs / 2 - 4, tw + 16, fs + 8, 8);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(196, 95, 10, 0.35)';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+    ctx.fillStyle = '#c45f0a';
+    ctx.fillText(label, W / 2, y + 0.5);
+  }
+
+  function disk(x, y, r, fill, edge, alpha) {
+    ctx.save();
+    if (alpha != null) ctx.globalAlpha = alpha;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = fill;
+    ctx.fill();
+    ctx.strokeStyle = edge;
+    ctx.lineWidth = Math.max(1, r * 0.18);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(x - r * 0.28, y - r * 0.28, r * 0.28, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawWater(x, y, r) {
+    disk(x, y, r, '#8ec4de', '#5a98b8', 0.38);
+  }
+
+  function drawAcid(x, y, r) {
+    disk(x, y, r, '#1c8a78', '#0f5c50', 1);
+  }
+
+  function strokePlus(x, y, r) {
+    var s = r * 0.45;
+    ctx.save();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = Math.max(1.5, r * 0.24);
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(x - s, y);
+    ctx.lineTo(x + s, y);
+    ctx.moveTo(x, y - s);
+    ctx.lineTo(x, y + s);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function strokeMinus(x, y, r) {
+    var s = r * 0.42;
+    ctx.save();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = Math.max(1.5, r * 0.24);
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(x - s, y);
+    ctx.lineTo(x + s, y);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawIonLabel(x, y, r, text, scale) {
+    var maxW = r * (text.length > 3 ? 2.45 : 1.7);
+    var px = Math.max(7, Math.round(r * (scale || 0.92)));
+    ctx.save();
+    ctx.fillStyle = '#fff';
+    ctx.strokeStyle = 'rgba(80,20,20,0.28)';
+    ctx.lineWidth = 2;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = '700 ' + px + 'px ' + FONT;
+    while (px > 7 && ctx.measureText(text).width > maxW) {
+      px -= 1;
+      ctx.font = '700 ' + px + 'px ' + FONT;
+    }
+    if (r >= 8) ctx.strokeText(text, x, y + 0.5);
+    ctx.fillText(text, x, y + 0.5);
+    ctx.restore();
+  }
+
+  function drawHplus(x, y, r) {
+    disk(x, y, r, '#d94a5c', '#9a2030', 1);
+    if (r >= 5) drawIonLabel(x, y, r, 'H⁺', 0.95);
+    else strokePlus(x, y, r);
+  }
+
+  function drawCl(x, y, r) {
+    disk(x, y, r, '#1c8a78', '#0f5c50', 1);
+    if (r >= 5) drawIonLabel(x, y, r, 'Cl⁻', 0.82);
+    else if (r >= 4) strokeMinus(x, y, r);
+  }
+
+  function drawAcetate(x, y, r) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.beginPath();
+    ctx.ellipse(0, 0, r * 1.25, r * 0.85, -0.25, 0, Math.PI * 2);
+    ctx.fillStyle = '#c47a2a';
+    ctx.fill();
+    ctx.strokeStyle = '#8a5216';
+    ctx.lineWidth = Math.max(1, r * 0.16);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.ellipse(-r * 0.35, -r * 0.25, r * 0.35, r * 0.22, -0.3, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.28)';
+    ctx.fill();
+    if (r >= 4) strokeMinus(r * 0.28, 0, r * 0.9);
+    ctx.restore();
+  }
+
+  function drawHClMol(x, y) {
+    var s = layout.sizes;
+    var rH = s.hplus * 0.92, rCl = s.cl * 0.92;
+    var gap = (rH + rCl) * 1.02;
+    ctx.save();
+    ctx.strokeStyle = '#6a6464';
+    ctx.lineWidth = Math.max(1.4, rH * 0.22);
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(x - gap * 0.55, y);
+    ctx.lineTo(x + gap * 0.55, y);
+    ctx.stroke();
+    drawHplus(x - gap * 0.55, y, rH);
+    drawCl(x + gap * 0.55, y, rCl);
+    ctx.restore();
+  }
+
+  function drawAceticMol(x, y) {
+    var r = layout.sizes.acetic;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.beginPath();
+    ctx.ellipse(0, 0, r * 1.95, r * 0.95, 0, 0, Math.PI * 2);
+    ctx.fillStyle = '#6b5b95';
+    ctx.fill();
+    ctx.strokeStyle = '#43366a';
+    ctx.lineWidth = Math.max(1.2, r * 0.14);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.ellipse(-r * 0.45, -r * 0.32, r * 0.4, r * 0.22, -0.15, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.22)';
+    ctx.fill();
+    ctx.restore();
+    if (r >= 5) drawIonLabel(x, y, r * 1.05, 'CH₃COOH', 0.78);
+  }
+
+  function drawH2SO4Mol(x, y) {
+    var rCore = layout.sizes.so4;
+    var rH = layout.sizes.hplus;
+    ctx.save();
+    ctx.strokeStyle = '#6a6464';
+    ctx.lineWidth = Math.max(1.3, rH * 0.22);
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(x - rCore * 1.35, y);
+    ctx.lineTo(x, y);
+    ctx.moveTo(x + rCore * 1.35, y);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    drawSO4(x, y, rCore);
+    drawHplus(x - rCore * 1.7, y, rH);
+    drawHplus(x + rCore * 1.7, y, rH);
+    ctx.restore();
+  }
+
+  function drawSO4(x, y, r) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.beginPath();
+    ctx.ellipse(0, 0, r * 1.55, r * 1.12, 0.04, 0, Math.PI * 2);
+    ctx.fillStyle = '#c9a227';
+    ctx.fill();
+    ctx.strokeStyle = '#7a5e10';
+    ctx.lineWidth = Math.max(1.2, r * 0.16);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.ellipse(-r * 0.35, -r * 0.32, r * 0.32, r * 0.2, -0.2, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.22)';
+    ctx.fill();
+    ctx.restore();
+    if (r >= 5) drawIonLabel(x, y, r, 'SO₄²⁻', 0.62);
+  }
+
+  function hplusShake(p) {
+    if (reducedMotion) return { x: 0, y: 0 };
+    var t = animTime;
+    return {
+      x: Math.sin(t * 0.018 + p.phase) * 2.2 + Math.sin(t * 0.043 + p.phase * 2.1) * 0.8,
+      y: Math.cos(t * 0.021 + p.phase * 1.37) * 2.0 + Math.cos(t * 0.039 + p.phase) * 0.7
+    };
+  }
+
+  function particleRadius(kind) {
+    var s = layout.sizes;
+    if (kind === 'water') return s.water;
+    if (kind === 'acid') return s.acid;
+    if (kind === 'hplus') return s.hplus;
+    if (kind === 'cl') return s.cl;
+    if (kind === 'acetate') return s.acetate;
+    if (kind === 'hcl') return s.hclCl + s.hclH;
+    if (kind === 'acetic') return s.acetic * 1.85;
+    if (kind === 'h2so4') return s.h2so4 * 1.15;
+    if (kind === 'so4') return s.so4 * 1.15;
+    return s.acid;
+  }
+
+  function drawKind(kind, x, y) {
+    if (kind === 'water') drawWater(x, y, layout.sizes.water);
+    else if (kind === 'acid') drawAcid(x, y, layout.sizes.acid);
+    else if (kind === 'hplus') drawHplus(x, y, layout.sizes.hplus);
+    else if (kind === 'cl') drawCl(x, y, layout.sizes.cl);
+    else if (kind === 'acetate') drawAcetate(x, y, layout.sizes.acetate);
+    else if (kind === 'hcl') drawHClMol(x, y);
+    else if (kind === 'acetic') drawAceticMol(x, y);
+    else if (kind === 'h2so4') drawH2SO4Mol(x, y);
+    else if (kind === 'so4') drawSO4(x, y, layout.sizes.so4);
+  }
+
+  function clipBeaker(b, fn) {
+    ctx.save();
+    beakerPath(b, false);
+    ctx.clip();
+    fn();
+    ctx.restore();
+  }
+
+  function dropYOf(p, b) {
+    /* ny can be negative while dropping from above the liquid surface */
+    var box = liquidBounds(b);
+    if (p.ny >= 0) return box.y0 + p.ny * box.h;
+    return box.y0 + p.ny * box.h;
+  }
+
+  function drawParticleList(list, b) {
+    var i, p, x, y;
+    var box = liquidBounds(b);
+    for (i = 0; i < list.length; i++) {
+      p = list[i];
+      x = box.x0 + p.nx * box.w;
+      y = dropYOf(p, b);
+      drawKind(p.kind, x, y);
+    }
+  }
+
+  function drawUnits(units, b) {
+    var i, u, x, y;
+    var box = liquidBounds(b);
+    /* molecules first, then ions (H+ on top) */
+    for (i = 0; i < units.length; i++) {
+      u = units[i];
+      if (u.state === 'molecule') {
+        x = box.x0 + u.nx * box.w;
+        y = box.y0 + u.ny * box.h;
+        drawKind(u.kind, x, y);
+      }
+    }
+    for (i = 0; i < units.length; i++) {
+      u = units[i];
+      if (u.state === 'ions') {
+        x = box.x0 + u.an.nx * box.w;
+        y = box.y0 + u.an.ny * box.h;
+        drawKind(u.an.kind, x, y);
+        x = box.x0 + u.h.nx * box.w;
+        y = box.y0 + u.h.ny * box.h;
+        drawKind(u.h.kind, x, y);
+      }
+    }
+  }
+
+  function drawConcUnits(units, b) {
+    var i, u, x, y, k, sh;
+    var box = liquidBounds(b);
+    for (i = 0; i < units.length; i++) {
+      u = units[i];
+      if (u.state === 'molecule') {
+        x = box.x0 + u.nx * box.w;
+        y = dropYOf(u, b);
+        drawKind(u.kind, x, y);
+      }
+    }
+    for (i = 0; i < units.length; i++) {
+      u = units[i];
+      if (u.state === 'ions') {
+        x = box.x0 + u.an.nx * box.w;
+        y = box.y0 + u.an.ny * box.h;
+        drawKind(u.an.kind, x, y);
+        for (k = 0; k < u.hs.length; k++) {
+          sh = hplusShake(u.hs[k]);
+          x = box.x0 + u.hs[k].nx * box.w + sh.x;
+          y = box.y0 + u.hs[k].ny * box.h + sh.y;
+          drawKind('hplus', x, y);
+        }
+      }
+    }
+  }
+
+  function stepConcUnits(units, b, dt) {
+    var i, u, k;
+    for (i = 0; i < units.length; i++) {
+      u = units[i];
+      if (u.state === 'molecule') {
+        stepMover(u, b, particleRadius(u.kind), dt);
+      } else {
+        for (k = 0; k < u.hs.length; k++) {
+          stepMover(u.hs[k], b, particleRadius('hplus'), dt);
+        }
+        stepMover(u.an, b, particleRadius(u.an.kind), dt);
+      }
+    }
+  }
+
+  function draw() {
+    if (!layout) return;
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#fffdf7';
+    ctx.fillRect(0, 0, W, H);
+
+    drawBeakerGlass(layout.left);
+    drawBeakerGlass(layout.right);
+
+    if (tab === 'conc') {
+      ensureConcWaters();
+      clipBeaker(layout.left, function () {
+        drawParticleList(conc.watersL, layout.left);
+        drawConcUnits(conc.unitsL, layout.left);
+      });
+      clipBeaker(layout.right, function () {
+        drawParticleList(conc.watersR, layout.right);
+        drawConcUnits(conc.unitsR, layout.right);
+      });
+    } else {
+      clipBeaker(layout.left, function () {
+        drawParticleList(ion.watersL, layout.left);
+        drawUnits(ion.strong, layout.left);
+      });
+      clipBeaker(layout.right, function () {
+        drawParticleList(ion.watersR, layout.right);
+        drawUnits(ion.weak, layout.right);
+      });
+    }
+
+    /* Glass stroke again so marks stay above particles */
+    beakerPath(layout.left, true);
+    glassStroke();
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.ellipse(layout.left.cx, layout.left.top + 6, layout.left.w / 2, Math.max(4, layout.left.w * 0.06), 0, 0, Math.PI * 2);
+    ctx.strokeStyle = '#5f737e';
+    ctx.lineWidth = 2.2;
+    ctx.stroke();
+
+    beakerPath(layout.right, true);
+    glassStroke();
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.ellipse(layout.right.cx, layout.right.top + 6, layout.right.w / 2, Math.max(4, layout.right.w * 0.06), 0, 0, Math.PI * 2);
+    ctx.strokeStyle = '#5f737e';
+    ctx.lineWidth = 2.2;
+    ctx.stroke();
+
+    drawVolumeCaption();
+  }
+
+  function stepMover(p, b, r, dt) {
+    var box = liquidBounds(b);
+    if (box.h <= 1 || box.w <= 1) return;
+    if (p.dropping) {
+      p.dropT += dt / DROP_MS;
+      if (p.dropT >= 1 || reducedMotion) {
+        p.dropT = 1;
+        p.dropping = false;
+        p.nx = p.tnx;
+        p.ny = p.tny;
+      } else {
+        var e = ease(p.dropT);
+        p.nx = lerp(p.snx, p.tnx, e);
+        p.ny = lerp(p.sny, p.tny, e);
+      }
+      return;
+    }
+    if (reducedMotion) return;
+    var jitter = 28;
+    p.vx += (Math.random() - 0.5) * jitter;
+    p.vy += (Math.random() - 0.5) * jitter;
+    p.vx *= 0.90;
+    p.vy *= 0.90;
+    var spd = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+    var maxS = 42;
+    if (spd > maxS) {
+      p.vx *= maxS / spd;
+      p.vy *= maxS / spd;
+    }
+    var x = box.x0 + p.nx * box.w + p.vx * (dt / 1000);
+    var y = box.y0 + p.ny * box.h + p.vy * (dt / 1000);
+    var pad = r + 1;
+    if (x < box.x0 + pad) { x = box.x0 + pad; p.vx *= -0.7; }
+    if (x > box.x1 - pad) { x = box.x1 - pad; p.vx *= -0.7; }
+    if (y < box.y0 + pad) { y = box.y0 + pad; p.vy *= -0.7; }
+    if (y > box.y1 - pad) { y = box.y1 - pad; p.vy *= -0.7; }
+    p.nx = (x - box.x0) / box.w;
+    p.ny = (y - box.y0) / box.h;
+  }
+
+  function stepList(list, b, kindForR, dt) {
+    var i, p, r;
+    for (i = 0; i < list.length; i++) {
+      p = list[i];
+      r = particleRadius(kindForR || p.kind);
+      stepMover(p, b, r, dt);
+    }
+  }
+
+  function stepUnits(units, b, dt) {
+    var i, u;
+    for (i = 0; i < units.length; i++) {
+      u = units[i];
+      if (u.state === 'molecule') {
+        stepMover(u, b, particleRadius(u.kind), dt);
+      } else {
+        stepMover(u.h, b, particleRadius('hplus'), dt);
+        stepMover(u.an, b, particleRadius(u.an.kind), dt);
+      }
+    }
+  }
+
+  function stepIonize(dt) {
+    if (ion.phase !== 'running') return;
+    ion.clock += dt;
+    var t = clamp(ion.clock / durationMs(), 0, 1);
+    ion.t = t;
+    var changed = false;
+    function due(list) {
+      var i, u;
+      for (i = 0; i < list.length; i++) {
+        u = list[i];
+        if (u.willIonize && u.state === 'molecule' && t >= u.delay) {
+          convertUnit(u);
+          changed = true;
+        }
+      }
+    }
+    due(ion.strong);
+    due(ion.weak);
+    if (t >= 1) {
+      ion.phase = 'done';
+      ion.t = 1;
+      changed = true;
+    }
+    if (changed) syncIonizeUI();
+  }
+
+  function tick(ts) {
+    var dt = lastTs ? Math.min(50, ts - lastTs) : 16;
+    lastTs = ts;
+    if (!layout) {
+      requestAnimationFrame(tick);
+      return;
+    }
+    animTime += dt;
+    if (tab === 'conc') {
+      ensureConcWaters();
+      stepList(conc.watersL, layout.left, 'water', dt);
+      stepList(conc.watersR, layout.right, 'water', dt);
+      stepConcUnits(conc.unitsL, layout.left, dt);
+      stepConcUnits(conc.unitsR, layout.right, dt);
+      stepConcIonize(dt);
+    } else {
+      stepList(ion.watersL, layout.left, 'water', dt);
+      stepList(ion.watersR, layout.right, 'water', dt);
+      stepUnits(ion.strong, layout.left, dt);
+      stepUnits(ion.weak, layout.right, dt);
+      stepIonize(dt);
+    }
+    draw();
+    requestAnimationFrame(tick);
+  }
+
+  /* Event bindings */
+  bindTap(document.getElementById('tab-conc'), function () { setTab('conc'); });
+  bindTap(document.getElementById('tab-ionize'), function () { setTab('ionize'); });
+  bindTap(el.btnResetConc, function () { resetConc(); });
+  bindTap(el.btnConcIonize, function () { startIonize(); });
+  bindTap(el.btnIonize, function () { startIonize(); });
+  bindTap(el.btnResetIonize, function () { resetIonize(); });
+
+  Array.prototype.forEach.call(document.querySelectorAll('#sides-conc .acid-chip'), function (c) {
+    bindTap(c, function () {
+      setAcid(c.getAttribute('data-side'), c.getAttribute('data-acid'));
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('#sides-conc .conc-chip'), function (c) {
+    bindTap(c, function () {
+      setConc(c.getAttribute('data-side'), c.getAttribute('data-conc'));
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('.speed-group .fbtn'), function (c) {
+    bindTap(c, function () { setSpeed(c.getAttribute('data-speed')); });
+  });
+
+  function getState() {
+    var s = unitCounts(ion.strong);
+    var w = unitCounts(ion.weak);
+    var cmp = compareLabels();
+    var sL = concSideCounts(conc.unitsL);
+    var sR = concSideCounts(conc.unitsR);
+    return {
+      tab: tab,
+      acid: { left: conc.acidL, right: conc.acidR },
+      acidL: conc.acidL,
+      acidR: conc.acidR,
+      molar: { left: conc.molarL, right: conc.molarR },
+      molarL: conc.molarL,
+      molarR: conc.molarR,
+      leftMolar: conc.molarL,
+      rightMolar: conc.molarR,
+      leftParticles: conc.unitsL.length,
+      rightParticles: conc.unitsR.length,
+      leftAcid: conc.unitsL.length,
+      rightAcid: conc.unitsR.length,
+      leftHPlus: sL.hPlus,
+      rightHPlus: sR.hPlus,
+      leftCompare: cmp.L,
+      rightCompare: cmp.R,
+      particleScale: { 0.1: 8, 0.2: 16, 0.5: 40 },
+      concIonize: {
+        phase: conc.phase,
+        progress: conc.t,
+        left: { undissociated: sL.molecules, hPlus: sL.hPlus, anion: sL.anion, molar: conc.molarL, particles: conc.unitsL.length },
+        right: { undissociated: sR.molecules, hPlus: sR.hPlus, anion: sR.anion, molar: conc.molarR, particles: conc.unitsR.length }
+      },
+      ionize: {
+        phase: ion.phase,
+        speed: ion.speed,
+        progress: ion.t,
+        startUnits: START_UNITS,
+        strongIonizeTarget: STRONG_IONIZE,
+        weakIonizeTarget: WEAK_IONIZE,
+        strong: { undissociated: s.molecules, hPlus: s.hPlus, anion: s.anion },
+        weak: { undissociated: w.molecules, hPlus: w.hPlus, anion: w.anion }
+      },
+      reducedMotion: reducedMotion,
+      size: { W: W, H: H }
+    };
+  }
+
+  window.__acidSim = {
+    setTab: setTab,
+    setAcid: setAcid,
+    setLeftAcid: function (id) { setAcid('L', id); },
+    setRightAcid: function (id) { setAcid('R', id); },
+    setConc: setConc,
+    setLeftConc: function (m) { setConc('L', m); },
+    setRightConc: function (m) { setConc('R', m); },
+    startIonize: startIonize,
+    setIonizeProgress: applyIonizeProgress,
+    setSpeed: setSpeed,
+    reset: resetCurrent,
+    resetConc: resetConc,
+    resetIonize: resetIonize,
+    getState: getState,
+    CONC_SCALE: CONC_SCALE,
+    CONC_DEFAULT: CONC_DEFAULT,
+    START_UNITS: START_UNITS,
+    STRONG_IONIZE: STRONG_IONIZE,
+    WEAK_IONIZE: WEAK_IONIZE
+  };
+
+  window.addEventListener('resize', resize);
+  if (window.ResizeObserver) {
+    new ResizeObserver(function () { resize(); }).observe(canvas.parentElement);
+  }
+
+  ensureConcWaters();
+  resetConc();
+  buildIonizeParticles();
+  syncConcUI();
+  setTab('conc');
+  resize();
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
