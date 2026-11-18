@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="format-detection" content="telephone=no" />
+<title>加熱海水：蒸發與鹽的析出</title>
+<style>
+  :root {
+    --bg: #f7f3e8;
+    --ink: #2a2a2a;
+    --orange: #e07a20;
+    --orange-dark: #c45f0a;
+    --panel: #fffdf7;
+    --border: #e8dfc8;
+    --shadow: rgba(40, 30, 10, 0.12);
+    --water: #8ec4de;
+    --hit: 44px;
+    --safe-t: env(safe-area-inset-top, 0px);
+    --safe-r: env(safe-area-inset-right, 0px);
+    --safe-b: env(safe-area-inset-bottom, 0px);
+    --safe-l: env(safe-area-inset-left, 0px);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { height: 100%; height: -webkit-fill-available; }
+  html, body {
+    margin: 0; padding: 0;
+    font-family: "PingFang TC", "Noto Sans TC", "Noto Sans CJK TC", "Microsoft JhengHei", "Heiti TC", "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    overflow: hidden;
+    touch-action: manipulation;
+  }
+  body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    min-height: 100dvh;
+    min-height: -webkit-fill-available;
+    padding-top: var(--safe-t);
+    padding-right: var(--safe-r);
+    padding-bottom: var(--safe-b);
+    padding-left: var(--safe-l);
+  }
+  .app {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    height: 100dvh;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+    min-height: 0;
+  }
+  header { padding: 6px 12px 2px; text-align: center; flex-shrink: 0; }
+  header h1 {
+    margin: 0;
+    font-size: clamp(1rem, 3.2vw, 1.28rem);
+    font-weight: 700;
+    color: var(--orange-dark);
+    line-height: 1.3;
+  }
+  header .sub {
+    margin: 2px 0 0;
+    font-size: clamp(0.68rem, 2vw, 0.8rem);
+    color: #666;
+    line-height: 1.35;
+  }
+  .view-bar, .action-bar {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+  }
+  .view-bar { padding: 4px 10px 2px; gap: 6px; }
+  .action-bar { padding: 4px 10px 6px; }
+  .view-chip, .fbtn, .btn {
+    appearance: none;
+    -webkit-appearance: none;
+    font-family: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    touch-action: manipulation;
+    color: var(--ink);
+  }
+  .view-chip, .btn, .fbtn { min-height: var(--hit); min-width: var(--hit); }
+  .view-chip {
+    border: 2px solid var(--border);
+    border-radius: 999px;
+    padding: 8px 14px;
+    font-size: clamp(0.74rem, 2.2vw, 0.88rem);
+    background: var(--panel);
+    color: #555;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.06);
+  }
+  .view-chip.active {
+    background: linear-gradient(180deg, #f0a020, #d88810);
+    border-color: #c45f0a;
+    color: #fff;
+  }
+  .btn {
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 8px 16px;
+    font-size: clamp(0.82rem, 2.3vw, 0.95rem);
+    background: var(--panel);
+    box-shadow: 0 2px 0 rgba(0,0,0,0.08);
+  }
+  .btn.primary {
+    background: linear-gradient(180deg, #f0a020, #d88810);
+    border-color: #c45f0a;
+    color: #fff;
+  }
+  .btn.primary:disabled { opacity: 0.55; cursor: default; transform: none; }
+  .btn.secondary { background: #fff; border-color: #c9b896; }
+  .view-chip:active, .btn:active, .fbtn:active { transform: translateY(1px); }
+  .speed-group { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+  .speed-group .slabel {
+    font-size: clamp(0.7rem, 2vw, 0.8rem);
+    font-weight: 700;
+    color: #555;
+    padding-left: 4px;
+  }
+  .fbtn {
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: clamp(0.72rem, 2vw, 0.82rem);
+    background: var(--panel);
+    color: #555;
+  }
+  .fbtn.active {
+    background: linear-gradient(180deg, #6bb3d9, #3a8fbf);
+    border-color: #2a7aa8;
+    color: #fff;
+  }
+  .canvas-wrap {
+    flex: 1 1 auto;
+    min-height: 0;
+    margin: 2px 8px;
+    background: var(--panel);
+    border: 2px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 4px 16px var(--shadow);
+    position: relative;
+    overflow: hidden;
+  }
+  canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+  .legend {
+    display: flex;
+    gap: 10px 14px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 4px 10px 2px;
+    flex-shrink: 0;
+    font-size: clamp(0.7rem, 2vw, 0.82rem);
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-weight: 600; }
+  .swatch { flex-shrink: 0; border: 1.5px solid rgba(0,0,0,0.2); }
+  .swatch.sea { width: 14px; height: 10px; border-radius: 3px; background: #7eb8d4; }
+  .swatch.steam { width: 12px; height: 12px; border-radius: 50%; background: #d7e8f2; border-color: #9bb8c8; }
+  .swatch.saltc { width: 12px; height: 12px; background: #f4f0e6; border-color: #c4b79a; transform: rotate(20deg); }
+  .swatch.water { width: 12px; height: 12px; border-radius: 50%; background: #8ec4de; }
+  .swatch.na { width: 12px; height: 12px; border-radius: 50%; background: #e07a6a; border-color: #a43b30; }
+  .swatch.cl { width: 12px; height: 12px; border-radius: 50%; background: #3aa07a; border-color: #1f6b4e; }
+  .caption {
+    margin: 4px 10px 2px;
+    padding: 6px 10px;
+    border: 1.5px solid #e8c38a;
+    border-radius: 10px;
+    background: #fffaf0;
+    font-size: clamp(0.72rem, 2.1vw, 0.86rem);
+    line-height: 1.45;
+    flex-shrink: 0;
+  }
+  .caption strong { color: var(--orange-dark); }
+  footer {
+    text-align: center;
+    font-size: clamp(0.64rem, 1.8vw, 0.74rem);
+    color: #888;
+    padding: 2px 10px 6px;
+    flex-shrink: 0;
+  }
+  @media (max-height: 640px) {
+    header { padding: 4px 8px 0; }
+    .caption { margin: 2px 8px; padding: 4px 8px; }
+    .legend { padding-top: 2px; padding-bottom: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .view-chip:active, .btn:active, .fbtn:active { transform: none; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>加熱海水：蒸發與鹽的析出</h1>
+    <p class="sub">海水看起來清澈，鹽已溶解其中。加熱後水變成水蒸氣離開，鹽不會隨蒸氣走。</p>
+  </header>
+  <div class="view-bar" role="tablist" aria-label="檢視">
+    <button type="button" class="view-chip active" id="btn-macro" aria-pressed="true">宏觀裝置</button>
+    <button type="button" class="view-chip" id="btn-particles" aria-pressed="false">放大粒子</button>
+  </div>
+  <div class="action-bar">
+    <button type="button" class="btn primary" id="btn-heat">開始加熱</button>
+    <button type="button" class="btn secondary" id="btn-reset">重置</button>
+    <div class="speed-group" aria-label="速度">
+      <span class="slabel">速度</span>
+      <button type="button" class="fbtn" id="spd-slow" data-spd="0.55">慢</button>
+      <button type="button" class="fbtn active" id="spd-mid" data-spd="1">中</button>
+      <button type="button" class="fbtn" id="spd-fast" data-spd="1.85">快</button>
+    </div>
+  </div>
+  <div class="canvas-wrap"><canvas id="cv" aria-label="加熱海水模擬畫面"></canvas></div>
+  <div class="legend" id="legend-macro">
+    <span class="legend-item"><span class="swatch sea" aria-hidden="true"></span>海水（鹽已溶解）</span>
+    <span class="legend-item"><span class="swatch steam" aria-hidden="true"></span>水蒸氣</span>
+    <span class="legend-item"><span class="swatch saltc" aria-hidden="true"></span>固體鹽</span>
+  </div>
+  <div class="legend" id="legend-particles" hidden>
+    <span class="legend-item"><span class="swatch water" aria-hidden="true"></span>水分子</span>
+    <span class="legend-item"><span class="swatch na" aria-hidden="true"></span>Na⁺（溶解）</span>
+    <span class="legend-item"><span class="swatch cl" aria-hidden="true"></span>Cl⁻（溶解）</span>
+    <span class="legend-item"><span class="swatch saltc" aria-hidden="true"></span>固體鹽晶體</span>
+  </div>
+  <p class="caption" id="caption"><strong>課堂重點：</strong>尚未加熱。海水中已有溶解的鹽，但看不到固體鹽。</p>
+  <footer>粒子大小與過程為示意，並非真實比例。蒸發是物理變化：溶劑離開，溶質留下。</footer>
+</div>
+<script>
+(function () {
+  var BASE_MS = 8000;
+  var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var canvas = document.getElementById('cv');
+  var ctx = canvas.getContext('2d');
+  var wrap = canvas.parentElement;
+  var W = 800, H = 500, dpr = 1;
+  var view = 'macro';
+  var phase = 'idle';
+  var progress = 0;
+  var speedMul = 1;
+  var lastTs = 0;
+  var steam = [];
+  var waters = [];
+  var ions = [];
+  var escaping = [];
+  var crystalPts = [];
+  var statusText = '尚未加熱';
+
+  function rand(a, b) { return a + Math.random() * (b - a); }
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+
+  function bindTap(el, fn) {
+    var last = 0;
+    el.addEventListener('pointerup', function (e) {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      var now = Date.now();
+      if (now - last < 260) return;
+      last = now;
+      fn(e);
+    });
+    el.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fn(e); }
+    });
+  }
+
+  function duration() { return Math.max(2800, BASE_MS / speedMul); }
+
+  function waterFrac() { return 1 - progress; }
+
+  function saltAppear() {
+    if (progress < 0.62) return 0;
+    return clamp((progress - 0.62) / 0.38, 0, 1);
+  }
+
+  function captions() {
+    var el = document.getElementById('caption');
+    if (progress <= 0.001) {
+      statusText = '尚未加熱';
+      el.innerHTML = '<strong>課堂重點：</strong>尚未加熱。海水中已有溶解的鹽，但看不到固體鹽。';
+    } else if (progress < 0.62) {
+      statusText = '加熱中，水正在蒸發';
+      el.innerHTML = '<strong>課堂重點：</strong>水正在蒸發，變成水蒸氣上升；已溶解的鹽不會隨水蒸氣離開，溶液濃度逐漸升高。';
+    } else if (progress < 1) {
+      statusText = '鹽開始析出';
+      el.innerHTML = '<strong>課堂重點：</strong>水分減少，鹽開始以固體析出。鹽本來就在海水中，不是新製造出來的物質。';
+    } else {
+      statusText = '水已完全蒸發，皿中留下固體鹽';
+      el.innerHTML = '<strong>課堂重點：</strong>水已完全蒸發，皿中留下固體鹽。這是物理變化：溶劑（水）離開，溶質（鹽）留下。';
+    }
+  }
+
+  function updateHeatBtn() {
+    var b = document.getElementById('btn-heat');
+    b.disabled = false;
+    if (phase === 'idle') { b.textContent = '開始加熱'; b.disabled = false; }
+    else if (phase === 'heating') { b.textContent = '暫停'; }
+    else if (phase === 'paused') { b.textContent = '繼續加熱'; }
+    else { b.textContent = '已完成'; b.disabled = true; }
+  }
+
+  function seedParticles() {
+    waters = [];
+    ions = [];
+    escaping = [];
+    crystalPts = [];
+    var i, j, k = 0;
+    for (i = 0; i < 42; i++) {
+      waters.push({
+        x: rand(0.18, 0.82), y: rand(0.38, 0.86),
+        vx: rand(-0.015, 0.015), vy: rand(-0.015, 0.015),
+        r: rand(5, 7.5), phase: rand(0, Math.PI * 2)
+      });
+    }
+    for (i = 0; i < 8; i++) {
+      ions.push({ kind: 'Na', x: rand(0.22, 0.78), y: rand(0.42, 0.84), vx: rand(-0.02, 0.02), vy: rand(-0.02, 0.02) });
+      ions.push({ kind: 'Cl', x: rand(0.22, 0.78), y: rand(0.42, 0.84), vx: rand(-0.02, 0.02), vy: rand(-0.02, 0.02) });
+    }
+    for (j = 0; j < 4; j++) {
+      for (i = 0; i < 6; i++) {
+        crystalPts.push({
+          kind: (i + j) % 2 === 0 ? 'Na' : 'Cl',
+          gx: i, gy: j, delay: k * 0.012
+        });
+        k++;
+      }
+    }
+  }
+
+  function dishGeom() {
+    var cx = W * 0.5, dishW = Math.min(W * 0.42, 340);
+    var dishY = H * 0.42, dishH = Math.min(H * 0.22, 130);
+    return { cx: cx, dishW: dishW, dishY: dishY, dishH: dishH, rimY: dishY, bottomY: dishY + dishH };
+  }
+
+  function spawnSteam() {
+    if (phase !== 'heating' || progress >= 1) return;
+    if (steam.length > 28) return;
+    if (Math.random() > 0.45) return;
+    var g = dishGeom();
+    var wf = waterFrac();
+    if (wf < 0.04) return;
+    var surfaceY = g.rimY + 16 + (1 - wf) * (g.dishH - 28);
+    steam.push({
+      x: g.cx + rand(-g.dishW * 0.32, g.dishW * 0.32),
+      y: surfaceY - 4,
+      vx: rand(-8, 8),
+      vy: rand(-38, -22),
+      r: rand(7, 14),
+      a: rand(0.35, 0.6),
+      life: 0,
+      max: rand(0.9, 1.5)
+    });
+  }
+
+  function stepSteam(dt) {
+    spawnSteam();
+    var i, s;
+    for (i = steam.length - 1; i >= 0; i--) {
+      s = steam[i];
+      s.life += dt;
+      s.x += s.vx * dt;
+      s.y += s.vy * dt;
+      s.vy -= 6 * dt;
+      s.a *= 0.992;
+      if (s.life > s.max || s.a < 0.04) steam.splice(i, 1);
+    }
+  }
+
+  function setView(v) {
+    view = v === 'particles' ? 'particles' : 'macro';
+    document.getElementById('btn-macro').classList.toggle('active', view === 'macro');
+    document.getElementById('btn-particles').classList.toggle('active', view === 'particles');
+    document.getElementById('btn-macro').setAttribute('aria-pressed', view === 'macro' ? 'true' : 'false');
+    document.getElementById('btn-particles').setAttribute('aria-pressed', view === 'particles' ? 'true' : 'false');
+    document.getElementById('legend-macro').hidden = view !== 'macro';
+    document.getElementById('legend-particles').hidden = view !== 'particles';
+  }
+
+  function setSpeed(mul) {
+    speedMul = mul;
+    ['spd-slow', 'spd-mid', 'spd-fast'].forEach(function (id) {
+      var el = document.getElementById(id);
+      el.classList.toggle('active', Number(el.getAttribute('data-spd')) === mul);
+    });
+  }
+
+  function reset() {
+    phase = 'idle';
+    progress = 0;
+    steam = [];
+    escaping = [];
+    seedParticles();
+    captions();
+    updateHeatBtn();
+  }
+
+  function toggleHeat() {
+    if (phase === 'done') return;
+    if (phase === 'heating') phase = 'paused';
+    else {
+      phase = 'heating';
+      if (reduced) {
+        progress = 1;
+        phase = 'done';
+        seedParticles();
+      }
+    }
+    updateHeatBtn();
+    captions();
+  }
+
+  function setProgress(p) {
+    progress = clamp(p, 0, 1);
+    if (progress <= 0) phase = 'idle';
+    else if (progress >= 1) phase = 'done';
+    else phase = 'paused';
+    steam = [];
+    escaping = [];
+    captions();
+    updateHeatBtn();
+  }
+
+  function drawRoundRect(c, x, y, w, h, r) {
+    c.beginPath();
+    c.moveTo(x + r, y);
+    c.arcTo(x + w, y, x + w, y + h, r);
+    c.arcTo(x + w, y + h, x, y + h, r);
+    c.arcTo(x, y + h, x, y, r);
+    c.arcTo(x, y, x + w, y, r);
+    c.closePath();
+  }
+
+  function drawStatusPill() {
+    var t = statusText;
+    ctx.save();
+    ctx.font = '600 ' + Math.max(13, Math.min(W, H) * 0.028) + 'px "PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif';
+    var tw = ctx.measureText(t).width;
+    var px = 14, py = 12, ph = 28, pw = tw + 24;
+    var x = (W - pw) / 2;
+    ctx.fillStyle = 'rgba(255,253,247,0.92)';
+    ctx.strokeStyle = '#e8dfc8';
+    ctx.lineWidth = 2;
+    drawRoundRect(ctx, x, py, pw, ph, 14);
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#c45f0a';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(t, W / 2, py + ph / 2);
+    ctx.restore();
+  }
+
+  function drawBurner(g, on) {
+    var bx = g.cx, by = H * 0.86;
+    var t = performance.now() / 1000;
+    ctx.save();
+    ctx.fillStyle = '#3a3a3a';
+    ctx.beginPath();
+    ctx.moveTo(bx - 22, by + 18);
+    ctx.lineTo(bx - 16, by - 8);
+    ctx.lineTo(bx + 16, by - 8);
+    ctx.lineTo(bx + 22, by + 18);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#2a2a2a';
+    ctx.fillRect(bx - 8, by - 28, 16, 22);
+    ctx.fillStyle = '#555';
+    ctx.fillRect(bx - 6, by + 18, 12, 10);
+    ctx.fillRect(bx - 28, by + 26, 56, 8);
+    if (on) {
+      var flick = 1 + Math.sin(t * 18) * 0.08;
+      ctx.beginPath();
+      ctx.moveTo(bx - 10, by - 28);
+      ctx.quadraticCurveTo(bx - 12, by - 52 * flick, bx, by - 70 * flick);
+      ctx.quadraticCurveTo(bx + 12, by - 52 * flick, bx + 10, by - 28);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(80,160,255,0.55)';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(bx - 5, by - 28);
+      ctx.quadraticCurveTo(bx - 3, by - 44 * flick, bx, by - 54 * flick);
+      ctx.quadraticCurveTo(bx + 3, by - 44 * flick, bx + 5, by - 28);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(230,245,255,0.9)';
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawTripod(g) {
+    var top = g.bottomY + 8, base = H * 0.9;
+    ctx.save();
+    ctx.strokeStyle = '#4a4a4a';
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
+    [[-0.22, -28], [0, 0], [0.22, 28]].forEach(function (p) {
+      ctx.beginPath();
+      ctx.moveTo(g.cx + p[1] * 0.15, top);
+      ctx.lineTo(g.cx + p[1], base);
+      ctx.stroke();
+    });
+    ctx.strokeStyle = '#666';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(g.cx - g.dishW * 0.28, top);
+    ctx.lineTo(g.cx + g.dishW * 0.28, top);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawCrystals(g, amt) {
+    if (amt <= 0) return;
+    var n = Math.round(14 * amt);
+    var i, x, y, s, ang;
+    ctx.save();
+    for (i = 0; i < n; i++) {
+      var seed = i * 17.13;
+      x = g.cx + Math.sin(seed) * g.dishW * 0.28 * (0.3 + (i % 5) / 5);
+      y = g.bottomY - 10 - (i % 4) * 5 * amt;
+      s = 6 + (i % 3) * 2.2;
+      ang = seed;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(ang);
+      ctx.beginPath();
+      ctx.moveTo(s, 0);
+      var k;
+      for (k = 1; k < 6; k++) {
+        var rr = (k % 2 === 0) ? s : s * 0.62;
+        ctx.lineTo(Math.cos(k * Math.PI / 3) * rr, Math.sin(k * Math.PI / 3) * rr);
+      }
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(255,252,245,' + (0.75 + 0.25 * amt) + ')';
+      ctx.strokeStyle = 'rgba(170,150,120,0.9)';
+      ctx.lineWidth = 1.2;
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+    if (amt > 0.55) {
+      ctx.fillStyle = 'rgba(255,250,240,' + (0.45 * (amt - 0.55) / 0.45) + ')';
+      ctx.beginPath();
+      ctx.ellipse(g.cx, g.bottomY - 8, g.dishW * 0.34, 8 + 6 * amt, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawDish(g) {
+    var wf = waterFrac();
+    var x0 = g.cx - g.dishW / 2, x1 = g.cx + g.dishW / 2;
+    var top = g.rimY, bot = g.bottomY;
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(x0 - 8, top);
+    ctx.lineTo(x0 + 10, bot);
+    ctx.quadraticCurveTo(g.cx, bot + 14, x1 - 10, bot);
+    ctx.lineTo(x1 + 8, top);
+    ctx.strokeStyle = '#8a8a8a';
+    ctx.lineWidth = 4;
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(230,230,228,0.55)';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(g.cx, top, g.dishW / 2 + 8, 9, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(245,245,243,0.9)';
+    ctx.fill();
+    ctx.strokeStyle = '#8a8a8a';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    if (wf > 0.02) {
+      var surface = top + 14 + (1 - wf) * (bot - top - 26);
+      var alpha = 0.55 + 0.15 * (1 - wf);
+      ctx.beginPath();
+      ctx.moveTo(x0 + 8 + (1 - wf) * 6, surface);
+      ctx.lineTo(x0 + 12, bot - 4);
+      ctx.quadraticCurveTo(g.cx, bot + 8, x1 - 12, bot - 4);
+      ctx.lineTo(x1 - 8 - (1 - wf) * 6, surface);
+      ctx.closePath();
+      var lg = ctx.createLinearGradient(0, surface, 0, bot);
+      lg.addColorStop(0, 'rgba(110, 180, 210, ' + (0.72 * alpha / 0.7) + ')');
+      lg.addColorStop(1, 'rgba(70, 140, 180, ' + (0.85 * alpha / 0.7) + ')');
+      ctx.fillStyle = lg;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(g.cx, surface, g.dishW * 0.42, 7, 0, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(160, 210, 230, 0.7)';
+      ctx.fill();
+    }
+    drawCrystals(g, saltAppear());
+    ctx.beginPath();
+    ctx.moveTo(x0 - 8, top);
+    ctx.lineTo(x0 + 10, bot);
+    ctx.quadraticCurveTo(g.cx, bot + 14, x1 - 10, bot);
+    ctx.lineTo(x1 + 8, top);
+    ctx.strokeStyle = 'rgba(60,60,60,0.55)';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.font = '600 13px "PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif';
+    ctx.fillStyle = '#555';
+    ctx.textAlign = 'center';
+    ctx.fillText(wf > 0.08 ? '海水' : (saltAppear() > 0.2 ? '固體鹽' : '蒸發皿'), g.cx, top - 16);
+    ctx.restore();
+  }
+
+  function drawSteam() {
+    steam.forEach(function (s) {
+      ctx.save();
+      ctx.globalAlpha = s.a;
+      ctx.fillStyle = '#d7e8f2';
+      ctx.beginPath();
+      ctx.ellipse(s.x, s.y, s.r, s.r * 1.2, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(s.x + s.r * 0.5, s.y - 4, s.r * 0.7, s.r * 0.8, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    });
+  }
+
+  function drawMacro() {
+    ctx.fillStyle = '#f7f3e8';
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#efe6d2';
+    ctx.fillRect(0, H * 0.82, W, H * 0.18);
+    ctx.fillStyle = '#e4d8be';
+    ctx.fillRect(W * 0.12, H * 0.8, W * 0.76, 14);
+    var g = dishGeom();
+    drawTripod(g);
+    drawBurner(g, phase === 'heating' || (phase === 'paused' && progress > 0 && progress < 1));
+    drawDish(g);
+    drawSteam();
+    drawStatusPill();
+  }
+
+  function liquidBox() {
+    var m = 48;
+    return { x: W * 0.16, y: H * 0.16, w: W * 0.68, h: H * 0.7, m: m };
+  }
+
+  function drawIon(x, y, kind, packed) {
+    var r = packed ? 8 : 9;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = kind === 'Na' ? '#e07a6a' : '#3aa07a';
+    ctx.strokeStyle = kind === 'Na' ? '#a43b30' : '#1f6b4e';
+    ctx.lineWidth = 1.5;
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#fff';
+    ctx.font = '700 10px "PingFang TC","Microsoft JhengHei",sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(kind === 'Na' ? '+' : '−', x, y + 0.5);
+  }
+
+  function stepParticles(dt) {
+    var box = liquidBox();
+    var wf = Math.max(0.06, waterFrac());
+    var liquidTop = box.y + 36 + (1 - waterFrac()) * (box.h * 0.72);
+    var liquidBot = box.y + box.h - 18;
+    var liquidLeft = box.x + 18;
+    var liquidRight = box.x + box.w - 18;
+    var i, p, heat = phase === 'heating';
+    for (i = waters.length - 1; i >= 0; i--) {
+      p = waters[i];
+      var targetCount = Math.round(42 * Math.max(0, waterFrac()));
+      if (heat && waters.length > targetCount && Math.random() < 0.08) {
+        escaping.push({ x: box.x + p.x * box.w, y: liquidTop + p.y * 0, r: p.r, vy: -40, vx: rand(-10, 10), a: 0.9 });
+        waters.splice(i, 1);
+        continue;
+      }
+      p.phase += dt * 3;
+      p.x += p.vx * dt * 8;
+      p.y += p.vy * dt * 8;
+      if (p.x < 0.08 || p.x > 0.92) p.vx *= -1;
+      var topN = 0.12 + (1 - wf) * 0.55;
+      if (p.y < topN) { p.y = topN + 0.01; p.vy = Math.abs(p.vy); }
+      if (p.y > 0.9) { p.y = 0.9; p.vy *= -1; }
+    }
+    while (heat && waters.length > Math.round(42 * Math.max(0, waterFrac()))) {
+      p = waters.pop();
+      escaping.push({ x: box.x + p.x * box.w, y: liquidTop, r: p.r, vy: -40, vx: rand(-10, 10), a: 0.9 });
+    }
+    for (i = escaping.length - 1; i >= 0; i--) {
+      p = escaping[i];
+      p.y += p.vy * dt;
+      p.x += p.vx * dt;
+      p.a -= dt * 0.7;
+      if (p.a <= 0 || p.y < box.y - 20) escaping.splice(i, 1);
+    }
+    var pack = saltAppear();
+    ions.forEach(function (ion, idx) {
+      if (pack > 0.15) {
+        var col = idx % 6, row = Math.floor(idx / 6);
+        var tx = (0.28 + col * 0.08);
+        var ty = (0.62 + row * 0.08);
+        ion.x += (tx - ion.x) * dt * (1.2 + pack * 2);
+        ion.y += (ty - ion.y) * dt * (1.2 + pack * 2);
+      } else {
+        ion.x += ion.vx * dt * 8;
+        ion.y += ion.vy * dt * 8;
+        var topN2 = 0.18 + (1 - wf) * 0.5;
+        if (ion.x < 0.12 || ion.x > 0.88) ion.vx *= -1;
+        if (ion.y < topN2) { ion.y = topN2; ion.vy = Math.abs(ion.vy); }
+        if (ion.y > 0.88) { ion.y = 0.88; ion.vy *= -1; }
+      }
+    });
+  }
+
+  function drawParticles() {
+    var box = liquidBox();
+    ctx.fillStyle = '#f7f3e8';
+    ctx.fillRect(0, 0, W, H);
+    ctx.save();
+    var wf = waterFrac();
+    var liquidTop = box.y + 36 + (1 - wf) * (box.h * 0.72);
+    ctx.fillStyle = '#efe8d8';
+    drawRoundRect(ctx, box.x, box.y, box.w, box.h, 18);
+    ctx.fill();
+    ctx.strokeStyle = '#c9b896';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    if (wf > 0.02) {
+      ctx.beginPath();
+      var r = 16;
+      ctx.moveTo(box.x + 8, liquidTop);
+      ctx.lineTo(box.x + 8, box.y + box.h - 16);
+      ctx.quadraticCurveTo(box.x + box.w / 2, box.y + box.h - 4, box.x + box.w - 8, box.y + box.h - 16);
+      ctx.lineTo(box.x + box.w - 8, liquidTop);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(110,180,210,0.45)';
+      ctx.fill();
+      ctx.fillStyle = 'rgba(150,210,230,0.5)';
+      ctx.fillRect(box.x + 8, liquidTop - 5, box.w - 16, 10);
+    }
+    waters.forEach(function (p) {
+      var x = box.x + p.x * box.w;
+      var y = box.y + p.y * box.h;
+      ctx.beginPath();
+      ctx.arc(x, y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(142,196,222,0.9)';
+      ctx.strokeStyle = 'rgba(40,110,150,0.5)';
+      ctx.lineWidth = 1;
+      ctx.fill();
+      ctx.stroke();
+    });
+    escaping.forEach(function (p) {
+      ctx.globalAlpha = Math.max(0, p.a);
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = '#d7e8f2';
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    });
+    ions.forEach(function (ion) {
+      drawIon(box.x + ion.x * box.w, box.y + ion.y * box.h, ion.kind, saltAppear() > 0.4);
+    });
+    ctx.fillStyle = '#555';
+    ctx.font = '600 13px "PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(wf > 0.08 ? '溶液（放大）' : '析出的鹽晶體（示意）', box.x + box.w / 2, box.y + 22);
+    ctx.restore();
+    drawStatusPill();
+  }
+
+  function resize() {
+    var rect = wrap.getBoundingClientRect();
+    dpr = Math.max(1, Math.min(2.5, window.devicePixelRatio || 1));
+    W = Math.max(320, Math.floor(rect.width));
+    H = Math.max(240, Math.floor(rect.height));
+    canvas.width = Math.floor(W * dpr);
+    canvas.height = Math.floor(H * dpr);
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function tick(ts) {
+    if (!lastTs) lastTs = ts;
+    var dt = Math.min(0.05, (ts - lastTs) / 1000);
+    lastTs = ts;
+    if (phase === 'heating') {
+      progress = clamp(progress + (dt * 1000) / duration(), 0, 1);
+      if (progress >= 1) {
+        progress = 1;
+        phase = 'done';
+        updateHeatBtn();
+      }
+      captions();
+    }
+    if (view === 'macro') stepSteam(dt);
+    else stepParticles(dt);
+    if (view === 'macro') drawMacro();
+    else drawParticles();
+    requestAnimationFrame(tick);
+  }
+
+  bindTap(document.getElementById('btn-macro'), function () { setView('macro'); });
+  bindTap(document.getElementById('btn-particles'), function () { setView('particles'); });
+  bindTap(document.getElementById('btn-heat'), toggleHeat);
+  bindTap(document.getElementById('btn-reset'), reset);
+  ['spd-slow', 'spd-mid', 'spd-fast'].forEach(function (id) {
+    bindTap(document.getElementById(id), function () {
+      setSpeed(Number(document.getElementById(id).getAttribute('data-spd')));
+    });
+  });
+
+  window.__seawaterSim = {
+    start: function () { if (phase !== 'done') { phase = 'heating'; updateHeatBtn(); } },
+    pause: function () { if (phase === 'heating') { phase = 'paused'; updateHeatBtn(); } },
+    reset: reset,
+    setProgress: setProgress,
+    setSpeed: setSpeed,
+    setView: setView,
+    getState: function () {
+      return { view: view, phase: phase, progress: progress, speedMul: speedMul, waterFrac: waterFrac(), saltAppear: saltAppear() };
+    }
+  };
+
+  window.addEventListener('resize', resize);
+  seedParticles();
+  resize();
+  captions();
+  updateHeatBtn();
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
